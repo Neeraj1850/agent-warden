@@ -4,29 +4,119 @@ export type Hex = `0x${string}`;
 export interface UnsignedEvmTransaction {
   chainId: number;
   from: Address;
-  to: Address;
+  to?: Address;
   value?: string;
   data: Hex;
+  type?: number | string;
+  accessList?: unknown[];
+  authorizationList?: unknown[];
+  blobVersionedHashes?: Hex[];
+  maxFeePerBlobGas?: string;
 }
+
+export type TransactionEnvelopeType =
+  | "legacy"
+  | "access_list"
+  | "eip1559"
+  | "blob"
+  | "eip7702"
+  | "unknown";
+
+export type ActionType =
+  | "native_transfer"
+  | "deployment"
+  | "erc20_transfer"
+  | "erc20_approval"
+  | "erc721_transfer"
+  | "erc721_approval"
+  | "erc721_operator_approval"
+  | "erc1155_transfer"
+  | "erc1155_batch_transfer"
+  | "erc1155_operator_approval"
+  | "swap"
+  | "multicall"
+  | "unknown_contract_call";
 
 export type DecodedFunctionName =
   | "erc20.transfer"
   | "erc20.approve"
+  | "erc20.transferFrom"
+  | "erc721.approve"
+  | "erc721.setApprovalForAll"
+  | "erc721.transferFrom"
+  | "erc721.safeTransferFrom"
+  | "erc1155.setApprovalForAll"
+  | "erc1155.safeTransferFrom"
+  | "erc1155.safeBatchTransferFrom"
+  | "router.swap"
+  | "multicall"
+  | "native.transfer"
+  | "contract.deployment"
   | "unknown";
 
-export interface DecodedTransaction {
+export interface TransactionEnvelope {
+  type: TransactionEnvelopeType;
+  rawType?: number | string;
+  hasAccessList: boolean;
+  hasBlobFields: boolean;
+  hasAuthorizationList: boolean;
+}
+
+export interface DecodedAction {
+  actionType: ActionType;
   functionName: DecodedFunctionName;
   selector: Hex;
+  contractAddress?: Address;
   tokenAddress?: Address;
+  assetStandard?: "native" | "erc20" | "erc721" | "erc1155" | "unknown";
+  from?: Address;
   recipient?: Address;
   spender?: Address;
+  operator?: Address;
+  approved?: boolean;
   amount?: string;
+  tokenId?: string;
+  tokenIds?: string[];
   rawAmount?: bigint;
   warnings: string[];
 }
 
+export interface DecodedTransaction {
+  functionName: DecodedFunctionName;
+  actionType?: ActionType;
+  selector: Hex;
+  contractAddress?: Address;
+  tokenAddress?: Address;
+  recipient?: Address;
+  spender?: Address;
+  operator?: Address;
+  approved?: boolean;
+  amount?: string;
+  tokenId?: string;
+  rawAmount?: bigint;
+  decodedActions?: DecodedAction[];
+  warnings: string[];
+}
+
 export interface TokenBalanceDelta {
+  assetStandard?: "native" | "erc20" | "erc721" | "erc1155" | "unknown";
   tokenAddress: Address;
   account: Address;
   delta: string;
+  tokenId?: string;
+}
+
+export interface ApprovalFinding {
+  standard: "erc20" | "erc721" | "erc1155";
+  owner: Address;
+  tokenAddress: Address;
+  spender?: Address;
+  operator?: Address;
+  amount?: string;
+  tokenId?: string;
+  approved?: boolean;
+  isUnlimited?: boolean;
+  isOperatorApproval?: boolean;
+  risk: "low" | "medium" | "high" | "critical";
+  message: string;
 }

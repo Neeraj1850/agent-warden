@@ -1,4 +1,7 @@
-import { analyzeTransaction, type AnalysisRequest } from "@arc-warden/core";
+import {
+  analyzeTransactionWithSimulation,
+  type AnalysisRequest
+} from "@arc-warden/core";
 import { analyzeTransactionInputSchema } from "../schemas/mcp.schemas.js";
 
 export const analyzeTransactionToolName = "analyze_transaction";
@@ -8,8 +11,8 @@ export const analyzeTransactionToolDescription =
 
 export const analyzeTransactionToolInputSchema = analyzeTransactionInputSchema;
 
-export function executeAnalyzeTransactionTool(input: AnalysisRequest) {
-  const report = analyzeTransaction(input);
+export async function executeAnalyzeTransactionTool(input: AnalysisRequest) {
+  const report = await analyzeTransactionWithSimulation(input);
   console.error(
     `[mcp] analyze_transaction verdict=${report.verdict} risk=${report.riskScore} hash=${report.reportHash}`
   );

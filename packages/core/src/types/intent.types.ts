@@ -1,6 +1,16 @@
 import type { Address } from "./transaction.types.js";
 
-export type IntentAction = "transfer" | "approve" | "contract_call";
+export type IntentAction =
+  | "transfer"
+  | "approve"
+  | "contract_call"
+  | "native_transfer"
+  | "token_transfer"
+  | "approval"
+  | "nft_transfer"
+  | "swap"
+  | "multicall"
+  | "deployment";
 
 export interface TransactionIntent {
   intentId?: string;
@@ -12,6 +22,10 @@ export interface TransactionIntent {
   spender?: Address;
   amount?: string;
   maxAmount?: string;
+  tokenId?: string;
+  allowNativeValue?: boolean;
   allowUnlimitedApproval?: boolean;
+  allowOperatorApproval?: boolean;
+  allowEip7702Authorization?: boolean;
   description?: string;
 }

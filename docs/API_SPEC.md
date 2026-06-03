@@ -33,3 +33,13 @@ Analyzes an unsigned EVM transaction.
 ### Response
 
 Returns a `SecurityReport` with verdict, risk score, decoded transaction, policy violations, simulation summary, safer alternative, and report hash.
+
+The V1 response also includes:
+
+- `transactionEnvelope`
+- `actionType`
+- `decodedActions`
+- `assetDeltas`
+- `approvalFindings`
+- `benchmarkProfile`
+- `simulationResult.revertReason` when an RPC simulation fails

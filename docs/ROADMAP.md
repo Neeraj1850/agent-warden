@@ -3,6 +3,10 @@
 ## Phase 1: Local MVP
 
 - deterministic analyzer
+- normalized transaction envelope and action classification
+- ERC-20/ERC-721/ERC-1155 approval and transfer coverage
+- swap and multicall selector classification
+- optional `eth_call` simulation
 - HTTP API
 - MCP tool wrapper
 - report hash generation

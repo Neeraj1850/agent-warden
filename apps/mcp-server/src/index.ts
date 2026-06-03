@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import type { AnalysisRequest } from "@arc-warden/core";
 import {
   analyzeTransactionToolDescription,
   analyzeTransactionToolInputSchema,
@@ -17,7 +18,7 @@ export function createMcpServer(): McpServer {
     analyzeTransactionToolName,
     analyzeTransactionToolDescription,
     analyzeTransactionToolInputSchema,
-    async (input) => executeAnalyzeTransactionTool(input)
+    async (input) => executeAnalyzeTransactionTool(input as AnalysisRequest)
   );
 
   return server;

@@ -12,22 +12,42 @@ export const analyzeTransactionInputSchema = {
   requestId: z.string().optional(),
   intent: z.object({
     intentId: z.string().optional(),
-    action: z.enum(["transfer", "approve", "contract_call"]),
+        action: z.enum([
+          "transfer",
+          "approve",
+          "contract_call",
+          "native_transfer",
+          "token_transfer",
+          "approval",
+          "nft_transfer",
+          "swap",
+          "multicall",
+          "deployment"
+        ]),
     chainId: z.number().int().positive(),
     from: addressSchema,
     tokenAddress: addressSchema.optional(),
     recipient: addressSchema.optional(),
-    spender: addressSchema.optional(),
-    amount: decimalSchema.optional(),
-    maxAmount: decimalSchema.optional(),
-    allowUnlimitedApproval: z.boolean().optional(),
-    description: z.string().optional()
-  }),
+        spender: addressSchema.optional(),
+        amount: decimalSchema.optional(),
+        maxAmount: decimalSchema.optional(),
+        tokenId: decimalSchema.optional(),
+        allowNativeValue: z.boolean().optional(),
+        allowUnlimitedApproval: z.boolean().optional(),
+        allowOperatorApproval: z.boolean().optional(),
+        allowEip7702Authorization: z.boolean().optional(),
+        description: z.string().optional()
+      }),
   transaction: z.object({
     chainId: z.number().int().positive(),
     from: addressSchema,
-    to: addressSchema,
+    to: addressSchema.optional(),
     value: decimalSchema.optional(),
-    data: hexSchema
+    data: hexSchema,
+    type: z.union([z.number(), z.string()]).optional(),
+    accessList: z.array(z.unknown()).optional(),
+    authorizationList: z.array(z.unknown()).optional(),
+    blobVersionedHashes: z.array(hexSchema).optional(),
+    maxFeePerBlobGas: decimalSchema.optional()
   })
 };

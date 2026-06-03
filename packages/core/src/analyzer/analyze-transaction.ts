@@ -1,5 +1,7 @@
+import { collectApprovalFindings } from "./approval-detector.js";
 import { decodeCalldata } from "./calldata-decoder.js";
 import { inferStaticBalanceDeltas } from "./balance-delta-analyzer.js";
+import { detectTransactionEnvelope } from "./envelope-detector.js";
 import { evaluatePolicies } from "../policy/policy-engine.js";
 import type {
   AnalysisRequest,
@@ -9,23 +11,72 @@ import type {
 import { hashObject } from "../utils/hashing.js";
 
 export function analyzeTransaction(request: AnalysisRequest): SecurityReport {
-  const decodedTransaction = decodeCalldata(request.transaction);
-  const policyDecision = evaluatePolicies(
-    request.intent,
+  const decodedTransaction = decodeCalldata(request.transaction, request.intent);
+  return buildSecurityReport(
+    request,
+    decodedTransaction,
+    staticSimulation(request, decodedTransaction)
+  );
+}
+
+export async function analyzeTransactionWithSimulation(
+  request: AnalysisRequest,
+  options: { rpcUrl?: string } = {}
+): Promise<SecurityReport> {
+  const decodedTransaction = decodeCalldata(request.transaction, request.intent);
+  const rpcUrl = options.rpcUrl ?? process.env.ANALYSIS_RPC_URL;
+
+  if (!rpcUrl) {
+    return buildSecurityReport(
+      request,
+      decodedTransaction,
+      staticSimulation(request, decodedTransaction)
+    );
+  }
+
+  return buildSecurityReport(
+    request,
+    decodedTransaction,
+    await ethCallSimulation(request, rpcUrl, decodedTransaction)
+  );
+}
+
+function buildSecurityReport(
+  request: AnalysisRequest,
+  decodedTransaction: ReturnType<typeof decodeCalldata>,
+  simulationOverride: SimulationResult
+): SecurityReport {
+  const transactionEnvelope = detectTransactionEnvelope(request.transaction);
+  const assetDeltas = inferStaticBalanceDeltas(
     request.transaction,
     decodedTransaction
   );
+  const policyDecision = evaluatePolicies(
+    request.intent,
+    request.transaction,
+    decodedTransaction,
+    transactionEnvelope
+  );
   const simulationResult: SimulationResult = {
-    status: "not_run",
-    engine: "local-static",
-    summary: "Static MVP analysis only. No RPC simulation was executed.",
-    balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
+    ...simulationOverride,
+    balanceDeltas: simulationOverride.balanceDeltas.length
+      ? simulationOverride.balanceDeltas
+      : assetDeltas
   };
 
   const reportWithoutHash = {
     requestId: request.requestId,
     verdict: policyDecision.verdict,
     riskScore: policyDecision.riskScore,
+    transactionEnvelope,
+    actionType: decodedTransaction.actionType ?? "unknown_contract_call",
+    decodedActions: decodedTransaction.decodedActions ?? [],
+    assetDeltas,
+    approvalFindings: collectApprovalFindings(
+      request.transaction,
+      decodedTransaction
+    ),
+    benchmarkProfile: inferBenchmarkProfile(request),
     decodedTransaction,
     policyViolations: policyDecision.violations,
     simulationResult,
@@ -40,4 +91,102 @@ export function analyzeTransaction(request: AnalysisRequest): SecurityReport {
       report: reportWithoutHash
     })
   };
+}
+
+function staticSimulation(
+  request: AnalysisRequest,
+  decodedTransaction = decodeCalldata(request.transaction, request.intent)
+): SimulationResult {
+  return {
+    status: "not_run",
+    engine: "local-static",
+    summary: "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+    balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
+  };
+}
+
+async function ethCallSimulation(
+  request: AnalysisRequest,
+  rpcUrl: string,
+  decodedTransaction = decodeCalldata(request.transaction, request.intent)
+): Promise<SimulationResult> {
+  try {
+    const response = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: request.requestId ?? "arc-warden-eth-call",
+        method: "eth_call",
+        params: [
+          {
+            from: request.transaction.from,
+            to: request.transaction.to,
+            value: toRpcQuantity(request.transaction.value),
+            data: request.transaction.data
+          },
+          "latest"
+        ]
+      })
+    });
+    const body = (await response.json()) as {
+      result?: string;
+      error?: { message?: string; data?: unknown };
+    };
+
+    if (body.error) {
+      return {
+        status: "failed",
+        engine: "eth_call",
+        summary: "eth_call simulation reverted or failed.",
+        revertReason: body.error.message ?? JSON.stringify(body.error.data),
+        balanceDeltas: inferStaticBalanceDeltas(
+          request.transaction,
+          decodedTransaction
+        )
+      };
+    }
+
+    return {
+      status: "success",
+      engine: "eth_call",
+      summary: "eth_call simulation completed successfully.",
+      balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      engine: "eth_call",
+      summary: "eth_call simulation request failed.",
+      revertReason: error instanceof Error ? error.message : "Unknown RPC error",
+      balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
+    };
+  }
+}
+
+function toRpcQuantity(value: string | undefined): `0x${string}` | undefined {
+  if (!value || value === "0") {
+    return undefined;
+  }
+
+  return `0x${BigInt(value).toString(16)}`;
+}
+
+function inferBenchmarkProfile(
+  request: AnalysisRequest
+): SecurityReport["benchmarkProfile"] {
+  const description = request.intent.description?.toLowerCase() ?? "";
+  if (description.includes("agentkit")) {
+    return "agentkit";
+  }
+
+  if (description.includes("goat")) {
+    return "goat";
+  }
+
+  if (description.includes("eliza")) {
+    return "eliza";
+  }
+
+  return "generic";
 }

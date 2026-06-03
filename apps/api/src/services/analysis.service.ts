@@ -1,9 +1,11 @@
 import {
-  analyzeTransaction,
+  analyzeTransactionWithSimulation,
   type AnalysisRequest,
   type SecurityReport
 } from "@arc-warden/core";
 
-export function analyzeRequest(request: AnalysisRequest): SecurityReport {
-  return analyzeTransaction(request);
+export async function analyzeRequest(
+  request: AnalysisRequest
+): Promise<SecurityReport> {
+  return analyzeTransactionWithSimulation(request);
 }

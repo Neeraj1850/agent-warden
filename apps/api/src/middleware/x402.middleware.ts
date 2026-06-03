@@ -30,7 +30,7 @@ export async function installX402Middleware(
     url: env.x402FacilitatorUrl
   });
   const resourceServer = new x402ResourceServer(facilitatorClient).register(
-    env.x402Network,
+    env.x402Network as `${string}:${string}`,
     new ExactEvmScheme()
   );
 
@@ -38,7 +38,13 @@ export async function installX402Middleware(
     `[x402] real middleware enabled route="POST /analyze" price=${env.x402Price} network=${env.x402Network}`
   );
 
-  paymentMiddleware(
+  const installPaymentMiddleware = paymentMiddleware as unknown as (
+    app: Express,
+    routes: Record<string, unknown>,
+    server: unknown
+  ) => void;
+
+  installPaymentMiddleware(
     app,
     {
       "POST /analyze": {

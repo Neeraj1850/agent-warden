@@ -46,6 +46,16 @@ export function matchIntent(
     });
   }
 
+  if (!intent.allowNativeValue && BigInt(transaction.value ?? "0") > 0n && decoded.functionName !== "native.transfer") {
+    violations.push({
+      code: "UNEXPECTED_NATIVE_VALUE",
+      severity: "high",
+      message: "Transaction includes native value but intent did not explicitly allow it.",
+      expected: "0",
+      actual: transaction.value ?? "0"
+    });
+  }
+
   if (decoded.functionName === "unknown") {
     violations.push({
       code: "UNKNOWN_FUNCTION_SELECTOR",
@@ -56,31 +66,92 @@ export function matchIntent(
     return violations;
   }
 
-  if (intent.action === "transfer" && decoded.functionName !== "erc20.transfer") {
+  if (
+    (intent.action === "transfer" || intent.action === "token_transfer") &&
+    decoded.actionType !== "erc20_transfer"
+  ) {
     violations.push({
       code: "ACTION_MISMATCH",
       severity: "high",
       message: "Intent expects a transfer, but transaction performs a different action.",
-      expected: "erc20.transfer",
-      actual: decoded.functionName
+      expected: "erc20_transfer",
+      actual: decoded.actionType ?? decoded.functionName
     });
   }
 
-  if (intent.action === "approve" && decoded.functionName !== "erc20.approve") {
+  if (
+    (intent.action === "approve" || intent.action === "approval") &&
+    !decoded.actionType?.includes("approval")
+  ) {
     violations.push({
       code: "ACTION_MISMATCH",
       severity: "high",
       message: "Intent expects an approval, but transaction performs a different action.",
-      expected: "erc20.approve",
-      actual: decoded.functionName
+      expected: "approval",
+      actual: decoded.actionType ?? decoded.functionName
     });
   }
 
-  if (decoded.functionName === "erc20.transfer") {
+  if (intent.action === "native_transfer" && decoded.actionType !== "native_transfer") {
+    violations.push({
+      code: "ACTION_MISMATCH",
+      severity: "high",
+      message: "Intent expects a native transfer, but transaction performs a different action.",
+      expected: "native_transfer",
+      actual: decoded.actionType ?? decoded.functionName
+    });
+  }
+
+  if (intent.action === "nft_transfer" && !decoded.actionType?.startsWith("erc721") && !decoded.actionType?.startsWith("erc1155")) {
+    violations.push({
+      code: "ACTION_MISMATCH",
+      severity: "high",
+      message: "Intent expects an NFT transfer, but transaction performs a different action.",
+      expected: "nft_transfer",
+      actual: decoded.actionType ?? decoded.functionName
+    });
+  }
+
+  if (intent.action === "swap" && decoded.actionType !== "swap") {
+    violations.push({
+      code: "ACTION_MISMATCH",
+      severity: "high",
+      message: "Intent expects a swap, but transaction performs a different action.",
+      expected: "swap",
+      actual: decoded.actionType ?? decoded.functionName
+    });
+  }
+
+  if (intent.action === "multicall" && decoded.actionType !== "multicall") {
+    violations.push({
+      code: "ACTION_MISMATCH",
+      severity: "high",
+      message: "Intent expects a multicall, but transaction performs a different action.",
+      expected: "multicall",
+      actual: decoded.actionType ?? decoded.functionName
+    });
+  }
+
+  if (intent.action === "deployment" && decoded.actionType !== "deployment") {
+    violations.push({
+      code: "ACTION_MISMATCH",
+      severity: "high",
+      message: "Intent expects a contract deployment, but transaction performs a different action.",
+      expected: "deployment",
+      actual: decoded.actionType ?? decoded.functionName
+    });
+  }
+
+  if (
+    decoded.actionType === "erc20_transfer" ||
+    decoded.actionType === "erc721_transfer" ||
+    decoded.actionType === "erc1155_transfer" ||
+    decoded.actionType === "native_transfer"
+  ) {
     matchTransferIntent(intent, decoded, violations);
   }
 
-  if (decoded.functionName === "erc20.approve") {
+  if (decoded.actionType?.includes("approval")) {
     matchApprovalIntent(intent, decoded, violations);
   }
 
@@ -119,6 +190,16 @@ function matchApprovalIntent(
       actual: decoded.spender
     });
   }
+
+  if (intent.spender && decoded.operator && !areAddressesEqual(intent.spender, decoded.operator)) {
+    violations.push({
+      code: "OPERATOR_MISMATCH",
+      severity: "critical",
+      message: "Approval operator does not match the declared intent spender/operator.",
+      expected: intent.spender,
+      actual: decoded.operator
+    });
+  }
 }
 
 function matchAmount(
@@ -127,6 +208,15 @@ function matchAmount(
   violations: PolicyViolation[]
 ): void {
   if (decoded.rawAmount === undefined) {
+    if (intent.tokenId && decoded.tokenId && intent.tokenId !== decoded.tokenId) {
+      violations.push({
+        code: "TOKEN_ID_MISMATCH",
+        severity: "high",
+        message: "NFT token ID does not match the declared intent token ID.",
+        expected: intent.tokenId,
+        actual: decoded.tokenId
+      });
+    }
     return;
   }
 

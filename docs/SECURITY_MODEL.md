@@ -11,6 +11,9 @@ ArcWarden assumes all external inputs are untrusted, including MCP requests, too
 - block recipient or spender mismatch
 - block unknown selectors
 - block unlimited approvals by default
+- block collection-wide ERC-721/ERC-1155 operator approvals by default
+- block EIP-7702 authorization-list transactions by default
+- flag suspicious multicalls with nested approvals or swaps
 - produce deterministic report hashes
 
 ## LLM Boundary

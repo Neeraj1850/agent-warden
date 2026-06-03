@@ -6,7 +6,7 @@ import { createHealthRouter } from "./routes/health.route.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { installX402Middleware } from "./middleware/x402.middleware.js";
 
-export async function createApiServer(env: ApiEnv) {
+export async function createApiServer(env: ApiEnv): Promise<express.Express> {
   const app = express();
 
   app.disable("x-powered-by");

@@ -14,6 +14,21 @@ The MVP is intentionally deterministic. It receives structured intent plus unsig
 
 LLMs may explain results later, but the deterministic policy engine is always the final authority.
 
+## Transaction Analysis V1
+
+ArcWarden now focuses first on pre-sign EVM transaction analysis. The analyzer classifies transaction envelopes, decodes agent-common actions, checks intent alignment, finds risky approvals, computes static asset deltas, and can optionally run `eth_call` simulation when `ANALYSIS_RPC_URL` is configured.
+
+V1 coverage:
+
+- native transfers and contract deployments
+- ERC-20 transfers, `transferFrom`, and approvals
+- ERC-721 transfers, token approvals, and `setApprovalForAll`
+- ERC-1155 transfers, batch transfers, and `setApprovalForAll`
+- common swap and multicall selectors
+- EIP-7702 authorization-list detection
+
+x402 remains parked and disabled by default while the analyzer core matures.
+
 ## How The Flow Works
 
 1. An agent prepares an unsigned EVM transaction and structured intent.

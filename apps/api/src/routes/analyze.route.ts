@@ -6,10 +6,10 @@ import { jsonStringify, responseLocals } from "../server.js";
 export function createAnalyzeRouter(): Router {
   const router = Router();
 
-  router.post("/analyze", (request, response, next) => {
+  router.post("/analyze", async (request, response, next) => {
     try {
       const body = request.body as AnalysisRequest;
-      const report = analyzeRequest(body);
+      const report = await analyzeRequest(body);
       logReport(responseLocals(request).requestId, report);
 
       response
