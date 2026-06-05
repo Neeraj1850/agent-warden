@@ -1,6 +1,6 @@
 ﻿# AgentWarden Web
 
-The UI is intentionally a placeholder for the MVP. The first grant demo should focus on the security pipeline, API, MCP tool, x402 payment flow, and Arc report anchoring.
+The UI is intentionally a placeholder for the MVP. The first product demo should focus on the security pipeline, API, MCP tool, x402 payment flow, and Arc report anchoring.
 
 Future UI scope:
 

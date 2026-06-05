@@ -25,7 +25,7 @@ export function detectApprovalRisks(
       violations.push({
         code: "UNLIMITED_APPROVAL",
         severity: "critical",
-        message: "Transaction grants an unlimited ERC-20 allowance.",
+        message: "Transaction creates an unlimited ERC-20 allowance.",
         expected: "bounded approval amount",
         actual: action.amount
       });
@@ -53,7 +53,7 @@ export function detectApprovalRisks(
       violations.push({
         code: "OPERATOR_APPROVAL_FOR_ALL",
         severity: "critical",
-        message: "Transaction grants collection-wide operator permissions.",
+        message: "Transaction creates collection-wide operator permissions.",
         expected: "no operator approval or explicit intent allowance",
         actual: action.operator
       });
@@ -63,7 +63,7 @@ export function detectApprovalRisks(
       violations.push({
         code: "ERC721_TOKEN_APPROVAL",
         severity: "medium",
-        message: "Transaction grants approval over a specific ERC-721 token.",
+        message: "Transaction creates approval over a specific ERC-721 token.",
         expected: "explicit token-specific approval review",
         actual: action.tokenId
       });

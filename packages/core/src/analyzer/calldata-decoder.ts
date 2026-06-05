@@ -249,7 +249,7 @@ function decodeOperatorApproval(
     tokenAddress: normalizeAddress(transaction.to!),
     operator,
     approved,
-    warnings: ["setApprovalForAll grants collection-wide operator permissions."]
+    warnings: ["setApprovalForAll authorizes collection-wide operator permissions."]
   };
 }
 

@@ -1,6 +1,6 @@
 # Attack Payloads
 
-This package runs a grant-demo suite of unsigned EVM transaction payloads through AgentWarden.
+This package runs a reproducible suite of unsigned EVM transaction payloads through AgentWarden.
 
 It demonstrates common agent signing risks:
 

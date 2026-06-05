@@ -36,11 +36,13 @@ export function buildExecutionGraph(
     })
   );
   const nodes = [rootNode, ...childNodes];
-  const edges = childNodes.map((node): ExecutionGraphEdge => ({
-    from: rootNode.id,
-    to: node.id,
-    relationship: inferRelationship(node.actionType)
-  }));
+  const edges = childNodes.map(
+    (node): ExecutionGraphEdge => ({
+      from: rootNode.id,
+      to: node.id,
+      relationship: inferRelationship(node.actionType)
+    })
+  );
 
   return {
     rootNodeId: rootNode.id,

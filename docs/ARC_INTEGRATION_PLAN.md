@@ -17,6 +17,6 @@ Use Arc Testnet for report anchoring and future security-review settlement.
 - ERC-8004 for AgentWarden agent identity and reputation.
 - ERC-8183 for paid security-review jobs between agents.
 
-## Grant Demo
+## Demo Path
 
 The clean demo path is to analyze a malicious approval, return `BLOCK`, and anchor the resulting report hash on Arc Testnet.

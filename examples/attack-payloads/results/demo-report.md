@@ -27,7 +27,7 @@ Source: AgentKit
 Verdict: ALLOW
 Risk score: 5
 Action: erc20_transfer
-Report hash: `0xe27521cc93cd5227054f1f736c2f0780450a84ec43a5b17a86a48f8e22f2a315`
+Report hash: `0x9adfd97964cc0610de74ac44772960a5b7d1f07ef4a853dc802b4ec083d70084`
 
 Summary: ALLOW: erc20 transfer classified as low risk.
 
@@ -45,14 +45,14 @@ Source: GOAT
 Verdict: BLOCK
 Risk score: 95
 Action: erc20_approval
-Report hash: `0x057172b7c269343c9f611e94aaa9be6dcfdbb5623fabe738e329cd06f1f7427b`
+Report hash: `0xa429f91f3daed57f4de57fd4bf48ecc369c06bb3ae3cdb0c6ca975a6a0a5f328`
 
 Summary: BLOCK: erc20 approval classified as critical risk.
 
-AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Transaction grants an unlimited ERC-20 allowance.
+AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Transaction creates an unlimited ERC-20 allowance.
 
 Findings:
-- CRITICAL UNLIMITED_APPROVAL: Transaction grants an unlimited ERC-20 allowance. Evidence: expected=bounded approval amount, actual=115792089237316195423570985008687907853269984665640564039457584007913129639935.
+- CRITICAL UNLIMITED_APPROVAL: Transaction creates an unlimited ERC-20 allowance. Evidence: expected=bounded approval amount, actual=115792089237316195423570985008687907853269984665640564039457584007913129639935.
 - CRITICAL APPROVAL_ERC20_UNLIMITED: Unlimited ERC-20 allowance. Evidence: standard=erc20, token=0x2222222222222222222222222222222222222222, spender=0x5555555555555555555555555555555555555555, amount=115792089237316195423570985008687907853269984665640564039457584007913129639935.
 
 Recommended action: Use a bounded approval for the exact intended amount or a short-lived spending allowance.
@@ -64,14 +64,14 @@ Source: Eliza
 Verdict: BLOCK
 Risk score: 95
 Action: erc721_operator_approval
-Report hash: `0x82344013670764b79ff4d3730cbcf39d0c52e4572184b984f65c284e16bff3d6`
+Report hash: `0x59f10cf9e29d72253529602cdce85a6635835726728e8b5c1d61a8265a1616ee`
 
 Summary: BLOCK: erc721 operator approval classified as critical risk.
 
-AgentWarden decoded the transaction as erc721 operator approval and found 2 issues before signing. Primary finding: Transaction grants collection-wide operator permissions.
+AgentWarden decoded the transaction as erc721 operator approval and found 2 issues before signing. Primary finding: Transaction creates collection-wide operator permissions.
 
 Findings:
-- CRITICAL OPERATOR_APPROVAL_FOR_ALL: Transaction grants collection-wide operator permissions. Evidence: expected=no operator approval or explicit intent allowance, actual=0x5555555555555555555555555555555555555555.
+- CRITICAL OPERATOR_APPROVAL_FOR_ALL: Transaction creates collection-wide operator permissions. Evidence: expected=no operator approval or explicit intent allowance, actual=0x5555555555555555555555555555555555555555.
 - CRITICAL APPROVAL_ERC721_OPERATOR: ERC-721 collection-wide operator approval. Evidence: standard=erc721, token=0x2222222222222222222222222222222222222222, operator=0x5555555555555555555555555555555555555555.
 
 Recommended action: Avoid collection-wide operator approval. Use token-specific approval or execute through a tightly scoped smart account policy.
@@ -83,14 +83,14 @@ Source: Generic
 Verdict: BLOCK
 Risk score: 95
 Action: erc1155_operator_approval
-Report hash: `0xf67ddb7ed7c8440a3943d25c86df931ce7528f87f6ca0c6010b786c0976fc48c`
+Report hash: `0x2e6fd8722ea864cc054e90f55b0945c6f57ee721ae838b44befdbc7b0176b4e3`
 
 Summary: BLOCK: erc1155 operator approval classified as critical risk.
 
-AgentWarden decoded the transaction as erc1155 operator approval and found 2 issues before signing. Primary finding: Transaction grants collection-wide operator permissions.
+AgentWarden decoded the transaction as erc1155 operator approval and found 2 issues before signing. Primary finding: Transaction creates collection-wide operator permissions.
 
 Findings:
-- CRITICAL OPERATOR_APPROVAL_FOR_ALL: Transaction grants collection-wide operator permissions. Evidence: expected=no operator approval or explicit intent allowance, actual=0x5555555555555555555555555555555555555555.
+- CRITICAL OPERATOR_APPROVAL_FOR_ALL: Transaction creates collection-wide operator permissions. Evidence: expected=no operator approval or explicit intent allowance, actual=0x5555555555555555555555555555555555555555.
 - CRITICAL APPROVAL_ERC1155_OPERATOR: ERC-1155 collection-wide operator approval. Evidence: standard=erc1155, token=0x2222222222222222222222222222222222222222, operator=0x5555555555555555555555555555555555555555.
 
 Recommended action: Avoid collection-wide operator approval. Use token-specific approval or execute through a tightly scoped smart account policy.
@@ -102,7 +102,7 @@ Source: GOAT
 Verdict: BLOCK
 Risk score: 100
 Action: multicall
-Report hash: `0xce75cd17220d225698b9a223ae45b2117eaa75e04f86f15639378a48c760b8df`
+Report hash: `0x59f136a6c99dab63e85fffefc8255c9b8eef057508e1c2285028831b50b23478`
 
 Summary: BLOCK: multicall classified as critical risk.
 
@@ -121,7 +121,7 @@ Source: Generic
 Verdict: BLOCK
 Risk score: 85
 Action: erc20_transfer
-Report hash: `0x4d269bce1187d7775fdc592cf8275cdf2f0b118fa62df5d259f158c52d575e31`
+Report hash: `0x8f7a08466da49f069dcdfc32fa701ff634e9807753c272fe8f7470c77e325837`
 
 Summary: BLOCK: erc20 transfer classified as high risk.
 
@@ -139,7 +139,7 @@ Source: Generic
 Verdict: BLOCK
 Risk score: 100
 Action: permit_signature
-Report hash: `0x69ff02eab3f045c96d0e888e77ed5e6a4e97870721b730b2bcb3d58fcf4143d2`
+Report hash: `0xeb44a9ae2b032b867843e14fa9cfaea374621bf863872554e5e4828559c9ec7b`
 
 Summary: BLOCK: permit signature classified as critical risk.
 
@@ -158,7 +158,7 @@ Source: Generic
 Verdict: BLOCK
 Risk score: 85
 Action: account_abstraction
-Report hash: `0xcbb3574b46b667b84b8159bc355f416cea4235f78fb6d945d31a131faa8e4fe5`
+Report hash: `0xb89655c42932616c4347f121f866b02f4645cbed74607104f990848624ef21b4`
 
 Summary: BLOCK: account abstraction classified as high risk.
 
@@ -177,7 +177,7 @@ Source: AgentKit
 Verdict: BLOCK
 Risk score: 50
 Action: erc20_transfer
-Report hash: `0x485ebf5641cdcb142c62e3bd2cba7c095dffd806fbb1f34d21930cd1d7de8c34`
+Report hash: `0x91e1b9056e71a88782e5bdf2c4bae549afc52091415b13a5326a9a9e12b53f8e`
 
 Summary: BLOCK: erc20 transfer classified as medium risk.
 
@@ -195,7 +195,7 @@ Source: Generic
 Verdict: BLOCK
 Risk score: 80
 Action: unknown_contract_call
-Report hash: `0xf8e99e17d59542c1b7fb2d260999a702d3f793fe019a309db0df28725015d676`
+Report hash: `0x6f3e44cc67b151a2e62a2ff6611d4e7c1dc0544394a7b9dde73a60c9563f9b11`
 
 Summary: BLOCK: unknown contract call classified as high risk.
 
@@ -213,7 +213,7 @@ Source: Generic
 Verdict: ALLOW
 Risk score: 35
 Action: deployment
-Report hash: `0xdf92d36de62a02d488ba01e9fd3396efef63d6c23a6445a8df82a6cdc07350fe`
+Report hash: `0x9e43f30562019acff1064bdd715ae480b539aa42d3828c12e77a507e37138ca6`
 
 Summary: ALLOW: deployment classified as low risk.
 
@@ -231,7 +231,7 @@ Source: Eliza
 Verdict: ALLOW
 Risk score: 25
 Action: swap
-Report hash: `0x3faf53820ad64587c1333a72d3e9019dc8c8286ba769de6ca4477d13f0d91d33`
+Report hash: `0xceca702f88efb76e96834cbb001ee380df073b38461c058805148e76464b152f`
 
 Summary: ALLOW: swap classified as low risk.
 

@@ -13,7 +13,7 @@ AgentWarden is for:
 - AI agent builders that need a pre-sign transaction firewall
 - wallets and smart account systems that need independent intent checks
 - security reviewers evaluating agent transaction pipelines
-- grant reviewers looking for a concrete MCP-native security primitive
+- teams building MCP-native agent security workflows
 
 The MVP is intentionally deterministic. It receives structured intent plus unsigned transaction data, decodes common ERC-20 calldata, applies policy checks, and returns a signed-analysis style report:
 
@@ -139,7 +139,7 @@ The suite covers safe transfers, unlimited approvals, NFT operator approvals, su
 
 It also includes permit-style approvals and EIP-4337 account abstraction bundles as bypass regression cases.
 
-Each run writes reviewer-friendly artifacts:
+Each run writes reproducible analysis artifacts:
 
 - `examples/attack-payloads/results/demo-report.md`
 - `examples/attack-payloads/results/demo-report.json`
@@ -185,7 +185,7 @@ X402_NETWORK=eip155:84532 \
 pnpm --filter @agent-warden/api dev
 ```
 
-The first grant demo should:
+The production x402 path should:
 
 - protect analysis requests with x402
 - require a max payment cap
@@ -203,4 +203,4 @@ The `packages/arc` package and `contracts` folder contain placeholders for:
 - ERC-8183 security-review jobs
 - policy registry governance
 
-Arc is the target settlement and attestation environment for the grant-facing roadmap.
+Arc is the target settlement and attestation environment for future report anchoring and agent-to-agent security-review workflows.

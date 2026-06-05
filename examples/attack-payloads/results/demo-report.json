@@ -52,6 +52,37 @@
           "hasAuthorizationList": false
         },
         "actionType": "erc20_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1000000",
+              "warnings": [],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1000000"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc20_transfer",
@@ -127,7 +158,7 @@
             }
           ]
         },
-        "reportHash": "0xe27521cc93cd5227054f1f736c2f0780450a84ec43a5b17a86a48f8e22f2a315"
+        "reportHash": "0x9adfd97964cc0610de74ac44772960a5b7d1f07ef4a853dc802b4ec083d70084"
       }
     },
     {
@@ -168,13 +199,13 @@
           "simulationRisk": 0
         },
         "summary": "BLOCK: erc20 approval classified as critical risk.",
-        "explanation": "AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Transaction grants an unlimited ERC-20 allowance.",
+        "explanation": "AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Transaction creates an unlimited ERC-20 allowance.",
         "findings": [
           {
             "code": "UNLIMITED_APPROVAL",
             "title": "Unlimited Approval",
             "severity": "critical",
-            "detail": "Transaction grants an unlimited ERC-20 allowance.",
+            "detail": "Transaction creates an unlimited ERC-20 allowance.",
             "evidence": [
               "expected=bounded approval amount",
               "actual=115792089237316195423570985008687907853269984665640564039457584007913129639935"
@@ -201,6 +232,37 @@
           "hasAuthorizationList": false
         },
         "actionType": "erc20_approval",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+              "warnings": [],
+              "evidence": [
+                "selector:0x095ea7b3",
+                "action:erc20_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "spender:0x5555555555555555555555555555555555555555",
+                "amount:115792089237316195423570985008687907853269984665640564039457584007913129639935"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc20_approval",
@@ -258,7 +320,7 @@
           {
             "code": "UNLIMITED_APPROVAL",
             "severity": "critical",
-            "message": "Transaction grants an unlimited ERC-20 allowance.",
+            "message": "Transaction creates an unlimited ERC-20 allowance.",
             "expected": "bounded approval amount",
             "actual": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
           }
@@ -270,7 +332,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Use a bounded approval for the exact intended amount or a short-lived spending allowance.",
-        "reportHash": "0x057172b7c269343c9f611e94aaa9be6dcfdbb5623fabe738e329cd06f1f7427b"
+        "reportHash": "0xa429f91f3daed57f4de57fd4bf48ecc369c06bb3ae3cdb0c6ca975a6a0a5f328"
       }
     },
     {
@@ -310,13 +372,13 @@
           "simulationRisk": 0
         },
         "summary": "BLOCK: erc721 operator approval classified as critical risk.",
-        "explanation": "AgentWarden decoded the transaction as erc721 operator approval and found 2 issues before signing. Primary finding: Transaction grants collection-wide operator permissions.",
+        "explanation": "AgentWarden decoded the transaction as erc721 operator approval and found 2 issues before signing. Primary finding: Transaction creates collection-wide operator permissions.",
         "findings": [
           {
             "code": "OPERATOR_APPROVAL_FOR_ALL",
             "title": "Operator Approval For All",
             "severity": "critical",
-            "detail": "Transaction grants collection-wide operator permissions.",
+            "detail": "Transaction creates collection-wide operator permissions.",
             "evidence": [
               "expected=no operator approval or explicit intent allowance",
               "actual=0x5555555555555555555555555555555555555555"
@@ -342,6 +404,38 @@
           "hasAuthorizationList": false
         },
         "actionType": "erc721_operator_approval",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc721_operator_approval",
+              "functionName": "erc721.setApprovalForAll",
+              "selector": "0xa22cb465",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc721",
+              "operator": "0x5555555555555555555555555555555555555555",
+              "approved": true,
+              "warnings": [
+                "setApprovalForAll authorizes collection-wide operator permissions."
+              ],
+              "evidence": [
+                "selector:0xa22cb465",
+                "action:erc721_operator_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "operator:0x5555555555555555555555555555555555555555"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc721_operator_approval",
@@ -353,7 +447,7 @@
             "operator": "0x5555555555555555555555555555555555555555",
             "approved": true,
             "warnings": [
-              "setApprovalForAll grants collection-wide operator permissions."
+              "setApprovalForAll authorizes collection-wide operator permissions."
             ]
           }
         ],
@@ -380,7 +474,7 @@
           "operator": "0x5555555555555555555555555555555555555555",
           "approved": true,
           "warnings": [
-            "setApprovalForAll grants collection-wide operator permissions."
+            "setApprovalForAll authorizes collection-wide operator permissions."
           ],
           "decodedActions": [
             {
@@ -393,7 +487,7 @@
               "operator": "0x5555555555555555555555555555555555555555",
               "approved": true,
               "warnings": [
-                "setApprovalForAll grants collection-wide operator permissions."
+                "setApprovalForAll authorizes collection-wide operator permissions."
               ]
             }
           ]
@@ -402,7 +496,7 @@
           {
             "code": "OPERATOR_APPROVAL_FOR_ALL",
             "severity": "critical",
-            "message": "Transaction grants collection-wide operator permissions.",
+            "message": "Transaction creates collection-wide operator permissions.",
             "expected": "no operator approval or explicit intent allowance",
             "actual": "0x5555555555555555555555555555555555555555"
           }
@@ -414,7 +508,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Avoid collection-wide operator approval. Use token-specific approval or execute through a tightly scoped smart account policy.",
-        "reportHash": "0x82344013670764b79ff4d3730cbcf39d0c52e4572184b984f65c284e16bff3d6"
+        "reportHash": "0x59f10cf9e29d72253529602cdce85a6635835726728e8b5c1d61a8265a1616ee"
       }
     },
     {
@@ -454,13 +548,13 @@
           "simulationRisk": 0
         },
         "summary": "BLOCK: erc1155 operator approval classified as critical risk.",
-        "explanation": "AgentWarden decoded the transaction as erc1155 operator approval and found 2 issues before signing. Primary finding: Transaction grants collection-wide operator permissions.",
+        "explanation": "AgentWarden decoded the transaction as erc1155 operator approval and found 2 issues before signing. Primary finding: Transaction creates collection-wide operator permissions.",
         "findings": [
           {
             "code": "OPERATOR_APPROVAL_FOR_ALL",
             "title": "Operator Approval For All",
             "severity": "critical",
-            "detail": "Transaction grants collection-wide operator permissions.",
+            "detail": "Transaction creates collection-wide operator permissions.",
             "evidence": [
               "expected=no operator approval or explicit intent allowance",
               "actual=0x5555555555555555555555555555555555555555"
@@ -486,6 +580,38 @@
           "hasAuthorizationList": false
         },
         "actionType": "erc1155_operator_approval",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc1155_operator_approval",
+              "functionName": "erc1155.setApprovalForAll",
+              "selector": "0xa22cb465",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc1155",
+              "operator": "0x5555555555555555555555555555555555555555",
+              "approved": true,
+              "warnings": [
+                "setApprovalForAll authorizes collection-wide operator permissions."
+              ],
+              "evidence": [
+                "selector:0xa22cb465",
+                "action:erc1155_operator_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "operator:0x5555555555555555555555555555555555555555"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc1155_operator_approval",
@@ -497,7 +623,7 @@
             "operator": "0x5555555555555555555555555555555555555555",
             "approved": true,
             "warnings": [
-              "setApprovalForAll grants collection-wide operator permissions."
+              "setApprovalForAll authorizes collection-wide operator permissions."
             ]
           }
         ],
@@ -524,7 +650,7 @@
           "operator": "0x5555555555555555555555555555555555555555",
           "approved": true,
           "warnings": [
-            "setApprovalForAll grants collection-wide operator permissions."
+            "setApprovalForAll authorizes collection-wide operator permissions."
           ],
           "decodedActions": [
             {
@@ -537,7 +663,7 @@
               "operator": "0x5555555555555555555555555555555555555555",
               "approved": true,
               "warnings": [
-                "setApprovalForAll grants collection-wide operator permissions."
+                "setApprovalForAll authorizes collection-wide operator permissions."
               ]
             }
           ]
@@ -546,7 +672,7 @@
           {
             "code": "OPERATOR_APPROVAL_FOR_ALL",
             "severity": "critical",
-            "message": "Transaction grants collection-wide operator permissions.",
+            "message": "Transaction creates collection-wide operator permissions.",
             "expected": "no operator approval or explicit intent allowance",
             "actual": "0x5555555555555555555555555555555555555555"
           }
@@ -558,7 +684,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Avoid collection-wide operator approval. Use token-specific approval or execute through a tightly scoped smart account policy.",
-        "reportHash": "0xf67ddb7ed7c8440a3943d25c86df931ce7528f87f6ca0c6010b786c0976fc48c"
+        "reportHash": "0x2e6fd8722ea864cc054e90f55b0945c6f57ee721ae838b44befdbc7b0176b4e3"
       }
     },
     {
@@ -624,6 +750,60 @@
           "hasAuthorizationList": false
         },
         "actionType": "multicall",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Nested approval selector detected inside multicall payload."
+              ],
+              "evidence": [
+                "selector:0xac9650d8",
+                "action:multicall",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            },
+            {
+              "id": "node-1",
+              "parentId": "node-0",
+              "depth": 1,
+              "kind": "multicall_child",
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "erc20",
+              "warnings": [
+                "Nested approval selector detected by static scan."
+              ],
+              "evidence": [
+                "selector:0x095ea7b3",
+                "action:erc20_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "from": "node-0",
+              "to": "node-1",
+              "relationship": "approves"
+            }
+          ],
+          "maxDepth": 1,
+          "hasNestedExecution": true,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "multicall",
@@ -703,7 +883,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Split the multicall into individual transactions or simulate and review every nested call before signing.",
-        "reportHash": "0xce75cd17220d225698b9a223ae45b2117eaa75e04f86f15639378a48c760b8df"
+        "reportHash": "0x59f136a6c99dab63e85fffefc8255c9b8eef057508e1c2285028831b50b23478"
       }
     },
     {
@@ -772,6 +952,37 @@
           "hasAuthorizationList": true
         },
         "actionType": "erc20_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "warnings": [],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc20_transfer",
@@ -856,7 +1067,7 @@
           ]
         },
         "saferAlternative": "Do not sign EIP-7702 authorization-list transactions unless the delegate code and policy are independently verified.",
-        "reportHash": "0x4d269bce1187d7775fdc592cf8275cdf2f0b118fa62df5d259f158c52d575e31"
+        "reportHash": "0x8f7a08466da49f069dcdfc32fa701ff634e9807753c272fe8f7470c77e325837"
       }
     },
     {
@@ -927,6 +1138,35 @@
           "hasAuthorizationList": false
         },
         "actionType": "permit_signature",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "permit_signature",
+              "functionName": "erc20.permit",
+              "selector": "0xd505accf",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "warnings": [
+                "Permit-style approval detected. This may authorize token spending through signed data rather than an ERC-20 approve transaction."
+              ],
+              "evidence": [
+                "selector:0xd505accf",
+                "action:permit_signature",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "permit_signature",
@@ -989,7 +1229,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Do not sign permit or Permit2 approvals until the spender, token, amount, deadline, and nonce are independently decoded and bounded.",
-        "reportHash": "0x69ff02eab3f045c96d0e888e77ed5e6a4e97870721b730b2bcb3d58fcf4143d2"
+        "reportHash": "0xeb44a9ae2b032b867843e14fa9cfaea374621bf863872554e5e4828559c9ec7b"
       }
     },
     {
@@ -1058,6 +1298,60 @@
           "hasAuthorizationList": false
         },
         "actionType": "account_abstraction",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "account_abstraction",
+              "functionName": "erc4337.handleOps",
+              "selector": "0x1fad948c",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "unknown",
+              "warnings": [
+                "EIP-4337 handleOps-style transaction detected. UserOperation callData requires recursive review before signing."
+              ],
+              "evidence": [
+                "selector:0x1fad948c",
+                "action:account_abstraction",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            },
+            {
+              "id": "node-1",
+              "parentId": "node-0",
+              "depth": 1,
+              "kind": "user_operation_hint",
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "erc20",
+              "warnings": [
+                "Nested approval selector detected inside EIP-4337 calldata."
+              ],
+              "evidence": [
+                "selector:0x095ea7b3",
+                "action:erc20_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "from": "node-0",
+              "to": "node-1",
+              "relationship": "approves"
+            }
+          ],
+          "maxDepth": 1,
+          "hasNestedExecution": true,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "account_abstraction",
@@ -1139,7 +1433,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Unwrap every EIP-4337 UserOperation callData item and analyze each inner transaction before signing or bundling.",
-        "reportHash": "0xcbb3574b46b667b84b8159bc355f416cea4235f78fb6d945d31a131faa8e4fe5"
+        "reportHash": "0xb89655c42932616c4347f121f866b02f4645cbed74607104f990848624ef21b4"
       }
     },
     {
@@ -1201,6 +1495,37 @@
           "hasAuthorizationList": false
         },
         "actionType": "erc20_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "warnings": [],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "erc20_transfer",
@@ -1284,7 +1609,7 @@
             }
           ]
         },
-        "reportHash": "0x485ebf5641cdcb142c62e3bd2cba7c095dffd806fbb1f34d21930cd1d7de8c34"
+        "reportHash": "0x91e1b9056e71a88782e5bdf2c4bae549afc52091415b13a5326a9a9e12b53f8e"
       }
     },
     {
@@ -1343,6 +1668,35 @@
           "hasAuthorizationList": false
         },
         "actionType": "unknown_contract_call",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "unknown_contract_call",
+              "functionName": "unknown",
+              "selector": "0xdeadbeef",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Unsupported function selector 0xdeadbeef"
+              ],
+              "evidence": [
+                "selector:0xdeadbeef",
+                "action:unknown_contract_call",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": true
+        },
         "decodedActions": [
           {
             "actionType": "unknown_contract_call",
@@ -1397,7 +1751,7 @@
           "balanceDeltas": []
         },
         "saferAlternative": "Route this transaction to a full ABI-aware decoder and simulator before signing.",
-        "reportHash": "0xf8e99e17d59542c1b7fb2d260999a702d3f793fe019a309db0df28725015d676"
+        "reportHash": "0x6f3e44cc67b151a2e62a2ff6611d4e7c1dc0544394a7b9dde73a60c9563f9b11"
       }
     },
     {
@@ -1444,6 +1798,30 @@
           "hasAuthorizationList": false
         },
         "actionType": "deployment",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "deployment",
+              "functionName": "contract.deployment",
+              "selector": "0x",
+              "assetStandard": "unknown",
+              "warnings": [],
+              "evidence": [
+                "selector:0x",
+                "action:deployment",
+                "tx.from:0x1111111111111111111111111111111111111111"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "deployment",
@@ -1478,7 +1856,7 @@
           "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
           "balanceDeltas": []
         },
-        "reportHash": "0xdf92d36de62a02d488ba01e9fd3396efef63d6c23a6445a8df82a6cdc07350fe"
+        "reportHash": "0x9e43f30562019acff1064bdd715ae480b539aa42d3828c12e77a507e37138ca6"
       }
     },
     {
@@ -1526,6 +1904,34 @@
           "hasAuthorizationList": false
         },
         "actionType": "swap",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "swap",
+              "functionName": "router.swap",
+              "selector": "0x38ed1739",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Known router swap selector router.swap"
+              ],
+              "evidence": [
+                "selector:0x38ed1739",
+                "action:swap",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
         "decodedActions": [
           {
             "actionType": "swap",
@@ -1569,7 +1975,7 @@
           "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
           "balanceDeltas": []
         },
-        "reportHash": "0x3faf53820ad64587c1333a72d3e9019dc8c8286ba769de6ca4477d13f0d91d33"
+        "reportHash": "0xceca702f88efb76e96834cbb001ee380df073b38461c058805148e76464b152f"
       }
     }
   ]

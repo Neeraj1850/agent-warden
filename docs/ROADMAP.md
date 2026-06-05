@@ -12,7 +12,7 @@
 - report hash generation
 - core analyzer tests
 
-## Phase 2: Grant Demo
+## Phase 2: End-to-End Demo
 
 - x402 payment gate on testnet
 - Arc Testnet report registry deployment
