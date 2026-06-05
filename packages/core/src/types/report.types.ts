@@ -24,12 +24,7 @@ export interface SimulationResult {
   revertReason?: string;
 }
 
-export type ReportFindingSeverity =
-  | "info"
-  | "low"
-  | "medium"
-  | "high"
-  | "critical";
+export type ReportFindingSeverity = "info" | "low" | "medium" | "high" | "critical";
 
 export interface ReportFinding {
   code: string;

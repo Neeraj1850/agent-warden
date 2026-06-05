@@ -12,10 +12,7 @@ export function createAnalyzeRouter(): Router {
       const report = await analyzeRequest(body);
       logReport(responseLocals(request).requestId, report);
 
-      response
-        .status(200)
-        .type("application/json")
-        .send(jsonStringify(report));
+      response.status(200).type("application/json").send(jsonStringify(report));
     } catch (error) {
       next(error);
     }

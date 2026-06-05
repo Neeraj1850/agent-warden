@@ -1,6 +1,19 @@
 ﻿# AgentWarden
 
+[![CI](https://github.com/Neeraj1850/agent-warden/actions/workflows/ci.yml/badge.svg)](https://github.com/Neeraj1850/agent-warden/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](package.json)
+
 AgentWarden is an AI-agent transaction security layer for blockchain agents. It analyzes unsigned EVM transactions before an agent signs or broadcasts them, with MCP and x402 integrations layered on top after the deterministic analyzer is solid.
+
+AI agents are increasingly able to construct and submit onchain transactions, but most signing flows still trust generated calldata too early. AgentWarden sits between agent intent and wallet signing, decodes the unsigned EVM transaction, checks it against policy, and returns a deterministic security report that another agent, wallet, or human can inspect before funds or permissions move.
+
+AgentWarden is for:
+
+- AI agent builders that need a pre-sign transaction firewall
+- wallets and smart account systems that need independent intent checks
+- security reviewers evaluating agent transaction pipelines
+- grant reviewers looking for a concrete MCP-native security primitive
 
 The MVP is intentionally deterministic. It receives structured intent plus unsigned transaction data, decodes common ERC-20 calldata, applies policy checks, and returns a signed-analysis style report:
 
@@ -14,6 +27,24 @@ The MVP is intentionally deterministic. It receives structured intent plus unsig
 - report hash for future onchain attestation
 
 LLMs may explain results later, but the deterministic policy engine is always the final authority.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Agent["External AI Agent"] --> Transport["API or MCP"]
+  Transport --> Analyzer["Deterministic Analyzer"]
+  Analyzer --> Decoder["Calldata and Envelope Decoder"]
+  Analyzer --> Policy["Policy Engine"]
+  Analyzer --> Simulation["Optional eth_call Simulation"]
+  Decoder --> Report["Security Report"]
+  Policy --> Report
+  Simulation --> Report
+  Report --> Decision["ALLOW / WARN / BLOCK"]
+  Report --> Hash["Deterministic Report Hash"]
+  Hash -. future .-> Arc["Arc Attestation"]
+  Transport -. future .-> X402["x402 Payment Gate"]
+```
 
 ## Transaction Analysis V1
 
@@ -103,9 +134,21 @@ Use `--no-artifacts` if you only want console output.
 
 ## MCP Tool
 
-The MCP server package contains an `analyze_transaction` tool wrapper around the core analyzer. The first implementation is kept SDK-light so the deterministic core can be tested locally before wiring a full MCP transport.
+The MCP server package exposes an `analyze_transaction` tool wrapper around the core analyzer over the official MCP TypeScript SDK stdio transport.
 
-Future integration will add the official MCP SDK transport and expose the tool over stdio or HTTP.
+Run the server:
+
+```bash
+pnpm --filter @agent-warden/mcp-server dev
+```
+
+Run the local MCP client demo:
+
+```bash
+pnpm --filter @agent-warden/mcp-server demo
+```
+
+The demo client spawns the stdio server, lists tools, sends a safe ERC-20 transfer and a malicious unlimited approval, and prints the returned summary, recommended action, verdict, risk score, and report hash.
 
 ## x402 Integration Plan
 

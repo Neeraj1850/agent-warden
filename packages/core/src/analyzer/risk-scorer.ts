@@ -30,7 +30,10 @@ function baseRiskForAction(decoded: DecodedTransaction): number {
     return 15;
   }
 
-  if (decoded.actionType === "deployment" || decoded.actionType === "unknown_contract_call") {
+  if (
+    decoded.actionType === "deployment" ||
+    decoded.actionType === "unknown_contract_call"
+  ) {
     return 35;
   }
 
@@ -38,11 +41,19 @@ function baseRiskForAction(decoded: DecodedTransaction): number {
 }
 
 export function decideVerdict(violations: PolicyViolation[]): Verdict {
-  if (violations.some((violation) => violation.severity === "critical" || violation.severity === "high")) {
+  if (
+    violations.some(
+      (violation) => violation.severity === "critical" || violation.severity === "high"
+    )
+  ) {
     return "BLOCK";
   }
 
-  if (violations.some((violation) => violation.severity === "medium" || violation.severity === "low")) {
+  if (
+    violations.some(
+      (violation) => violation.severity === "medium" || violation.severity === "low"
+    )
+  ) {
     return "WARN";
   }
 

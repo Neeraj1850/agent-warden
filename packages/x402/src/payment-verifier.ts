@@ -1,7 +1,4 @@
-import type {
-  X402PaymentProof,
-  X402VerificationResult
-} from "./x402-types.js";
+import type { X402PaymentProof, X402VerificationResult } from "./x402-types.js";
 
 export interface X402PaymentVerifier {
   verify(proof: X402PaymentProof): Promise<X402VerificationResult>;

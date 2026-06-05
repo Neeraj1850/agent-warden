@@ -25,7 +25,12 @@ export function inferStaticBalanceDeltas(
     ];
   }
 
-  if (decoded.actionType === "erc721_transfer" && decoded.tokenAddress && decoded.recipient && decoded.tokenId) {
+  if (
+    decoded.actionType === "erc721_transfer" &&
+    decoded.tokenAddress &&
+    decoded.recipient &&
+    decoded.tokenId
+  ) {
     return [
       {
         assetStandard: "erc721",

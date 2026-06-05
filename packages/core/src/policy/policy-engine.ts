@@ -49,7 +49,8 @@ function detectEnvelopeRisks(
       {
         code: "EIP7702_AUTHORIZATION_ALLOWED",
         severity: "medium",
-        message: "Transaction contains an EIP-7702 authorization list, explicitly allowed by intent."
+        message:
+          "Transaction contains an EIP-7702 authorization list, explicitly allowed by intent."
       }
     ];
   }
@@ -58,7 +59,8 @@ function detectEnvelopeRisks(
     {
       code: "EIP7702_AUTHORIZATION_PRESENT",
       severity: "critical",
-      message: "Transaction contains an EIP-7702 authorization list that may delegate EOA execution authority.",
+      message:
+        "Transaction contains an EIP-7702 authorization list that may delegate EOA execution authority.",
       expected: "no authorization list unless explicitly allowed",
       actual: "authorizationList"
     }
@@ -81,7 +83,8 @@ function detectMulticallRisks(decoded: DecodedTransaction): PolicyViolation[] {
       {
         code: "MULTICALL_REQUIRES_SIMULATION",
         severity: "medium",
-        message: "Multicall detected. V1 static analyzer cannot fully prove every nested call."
+        message:
+          "Multicall detected. V1 static analyzer cannot fully prove every nested call."
       }
     ];
   }
@@ -90,7 +93,8 @@ function detectMulticallRisks(decoded: DecodedTransaction): PolicyViolation[] {
     {
       code: "SUSPICIOUS_MULTICALL",
       severity: hasNestedApproval ? "critical" : "high",
-      message: "Multicall contains nested approval or swap selectors that require stricter review."
+      message:
+        "Multicall contains nested approval or swap selectors that require stricter review."
     }
   ];
 }
@@ -111,7 +115,9 @@ function buildSaferAlternative(
     return "Split the multicall into individual transactions or simulate and review every nested call before signing.";
   }
 
-  if (violations.some((violation) => violation.code === "EIP7702_AUTHORIZATION_PRESENT")) {
+  if (
+    violations.some((violation) => violation.code === "EIP7702_AUTHORIZATION_PRESENT")
+  ) {
     return "Do not sign EIP-7702 authorization-list transactions unless the delegate code and policy are independently verified.";
   }
 

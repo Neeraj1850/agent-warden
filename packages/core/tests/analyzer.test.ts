@@ -44,7 +44,9 @@ describe("analyzeTransaction", () => {
     const report = analyzeTransaction(approvalRequest(MAX_UINT256.toString()));
 
     assert.equal(report.verdict, "BLOCK");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "UNLIMITED_APPROVAL"));
+    assert.ok(
+      report.policyViolations.some((violation) => violation.code === "UNLIMITED_APPROVAL")
+    );
     assert.ok(report.findings.some((finding) => finding.code === "UNLIMITED_APPROVAL"));
     assert.match(report.explanation, /Primary finding/);
     assert.match(report.recommendedAction, /bounded approval/);
@@ -68,7 +70,11 @@ describe("analyzeTransaction", () => {
 
     assert.equal(report.verdict, "BLOCK");
     assert.equal(report.decodedTransaction.functionName, "unknown");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "UNKNOWN_FUNCTION_SELECTOR"));
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "UNKNOWN_FUNCTION_SELECTOR"
+      )
+    );
   });
 
   it("blocks chain mismatch", () => {
@@ -78,7 +84,9 @@ describe("analyzeTransaction", () => {
     const report = analyzeTransaction(request);
 
     assert.equal(report.verdict, "BLOCK");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "CHAIN_MISMATCH"));
+    assert.ok(
+      report.policyViolations.some((violation) => violation.code === "CHAIN_MISMATCH")
+    );
   });
 
   it("allows native transfer only when intent allows native value", () => {
@@ -123,7 +131,11 @@ describe("analyzeTransaction", () => {
     });
 
     assert.equal(report.verdict, "BLOCK");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "UNEXPECTED_NATIVE_VALUE"));
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "UNEXPECTED_NATIVE_VALUE"
+      )
+    );
   });
 
   it("detects contract deployment", () => {
@@ -185,7 +197,11 @@ describe("analyzeTransaction", () => {
     });
 
     assert.equal(report.verdict, "BLOCK");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "OPERATOR_APPROVAL_FOR_ALL"));
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "OPERATOR_APPROVAL_FOR_ALL"
+      )
+    );
   });
 
   it("decodes ERC1155 transfer", () => {
@@ -229,7 +245,11 @@ describe("analyzeTransaction", () => {
 
     assert.equal(report.verdict, "BLOCK");
     assert.equal(report.actionType, "multicall");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "SUSPICIOUS_MULTICALL"));
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "SUSPICIOUS_MULTICALL"
+      )
+    );
   });
 
   it("blocks EIP-7702 authorization-list transactions by default", () => {
@@ -254,7 +274,11 @@ describe("analyzeTransaction", () => {
 
     assert.equal(report.transactionEnvelope.type, "eip7702");
     assert.equal(report.verdict, "BLOCK");
-    assert.ok(report.policyViolations.some((violation) => violation.code === "EIP7702_AUTHORIZATION_PRESENT"));
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "EIP7702_AUTHORIZATION_PRESENT"
+      )
+    );
   });
 
   it("keeps report hash deterministic", () => {

@@ -72,7 +72,9 @@ export function decodeCalldata(
     selector === SELECTORS.erc721SafeTransferFrom ||
     selector === SELECTORS.erc721SafeTransferFromWithData
   ) {
-    return withActions(decodeNftTransfer(transaction, selector, "erc721.safeTransferFrom"));
+    return withActions(
+      decodeNftTransfer(transaction, selector, "erc721.safeTransferFrom")
+    );
   }
 
   if (selector === SELECTORS.erc1155SafeTransferFrom) {
@@ -149,7 +151,9 @@ function decodeApprovalLike(
       tokenAddress: normalizeAddress(transaction.to!),
       spender,
       tokenId: rawAmountOrTokenId.toString(),
-      warnings: ["ERC-721 approve shares selector with ERC-20 approve; classified from intent."]
+      warnings: [
+        "ERC-721 approve shares selector with ERC-20 approve; classified from intent."
+      ]
     };
   }
 
@@ -191,7 +195,9 @@ function decodeTransferFromLike(
       recipient,
       tokenId: rawAmountOrTokenId.toString(),
       decodedActions: [],
-      warnings: ["transferFrom shares selector across ERC-20 and ERC-721; classified from intent."]
+      warnings: [
+        "transferFrom shares selector across ERC-20 and ERC-721; classified from intent."
+      ]
     };
   }
 
@@ -299,7 +305,9 @@ function decodeErc1155BatchTransfer(
     selector,
     contractAddress: normalizeAddress(transaction.to!),
     tokenAddress: normalizeAddress(transaction.to!),
-    warnings: ["ERC-1155 batch transfer detected; dynamic token arrays are summarized in V1."]
+    warnings: [
+      "ERC-1155 batch transfer detected; dynamic token arrays are summarized in V1."
+    ]
   };
 }
 
@@ -337,7 +345,9 @@ function decodeMulticall(
   }
 
   if (lowerData.includes(SELECTORS.erc721SetApprovalForAll.slice(2))) {
-    nestedWarnings.push("Nested setApprovalForAll selector detected inside multicall payload.");
+    nestedWarnings.push(
+      "Nested setApprovalForAll selector detected inside multicall payload."
+    );
     nestedActions.push({
       actionType: "erc721_operator_approval",
       functionName: "erc721.setApprovalForAll",
@@ -348,7 +358,9 @@ function decodeMulticall(
     });
   }
 
-  if ([...SWAP_SELECTORS].some((swapSelector) => lowerData.includes(swapSelector.slice(2)))) {
+  if (
+    [...SWAP_SELECTORS].some((swapSelector) => lowerData.includes(swapSelector.slice(2)))
+  ) {
     nestedWarnings.push("Nested swap selector detected inside multicall payload.");
     nestedActions.push({
       actionType: "swap",
@@ -421,9 +433,7 @@ function withActions(decoded: DecodedTransaction): DecodedTransaction {
   };
 }
 
-function inferAssetStandard(
-  decoded: DecodedTransaction
-): DecodedAction["assetStandard"] {
+function inferAssetStandard(decoded: DecodedTransaction): DecodedAction["assetStandard"] {
   if (decoded.functionName.startsWith("erc20.")) {
     return "erc20";
   }

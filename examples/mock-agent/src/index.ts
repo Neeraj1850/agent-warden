@@ -63,10 +63,7 @@ function parseScenario(value: string | undefined): Scenario {
 function getConfig() {
   return {
     apiUrl: process.env.AGENTWARDEN_API_URL ?? "http://localhost:8787/analyze",
-    wallet: addressEnv(
-      "MOCK_AGENT_WALLET",
-      "0x1111111111111111111111111111111111111111"
-    ),
+    wallet: addressEnv("MOCK_AGENT_WALLET", "0x1111111111111111111111111111111111111111"),
     tokenAddress: addressEnv(
       "SEPOLIA_TOKEN_ADDRESS",
       "0x2222222222222222222222222222222222222222"
@@ -75,10 +72,7 @@ function getConfig() {
       "SEPOLIA_RECIPIENT",
       "0x3333333333333333333333333333333333333333"
     ),
-    spender: addressEnv(
-      "SEPOLIA_SPENDER",
-      "0x5555555555555555555555555555555555555555"
-    )
+    spender: addressEnv("SEPOLIA_SPENDER", "0x5555555555555555555555555555555555555555")
   };
 }
 
@@ -106,8 +100,7 @@ function buildAnalysisRequest(
         tokenAddress: config.tokenAddress,
         spender: config.spender,
         maxAmount: MAX_UINT256.toString(),
-        description:
-          "Mock agent is about to approve a spender on Ethereum Sepolia."
+        description: "Mock agent is about to approve a spender on Ethereum Sepolia."
       },
       transaction: {
         chainId: ETHEREUM_SEPOLIA_CHAIN_ID,
@@ -130,8 +123,7 @@ function buildAnalysisRequest(
       tokenAddress: config.tokenAddress,
       recipient: config.recipient,
       amount: amount.toString(),
-      description:
-        "Mock agent is about to transfer a test token on Ethereum Sepolia."
+      description: "Mock agent is about to transfer a test token on Ethereum Sepolia."
     },
     transaction: {
       chainId: ETHEREUM_SEPOLIA_CHAIN_ID,

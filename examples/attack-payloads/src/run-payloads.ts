@@ -49,10 +49,7 @@ if (failures > 0) {
   process.exitCode = 1;
 }
 
-async function analyzeViaApi(
-  url: string,
-  payload: DemoPayload
-): Promise<SecurityReport> {
+async function analyzeViaApi(url: string, payload: DemoPayload): Promise<SecurityReport> {
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -79,9 +76,7 @@ function printResult(
   passed: boolean
 ): void {
   const status = passed ? "PASS" : "FAIL";
-  const violations = report.policyViolations
-    .map((violation) => violation.code)
-    .join(",");
+  const violations = report.policyViolations.map((violation) => violation.code).join(",");
 
   console.log(
     `[${status}] ${payload.id} source=${payload.source} expected=${payload.expectedVerdict} actual=${report.verdict} risk=${report.riskScore} action=${report.actionType}`
@@ -203,11 +198,7 @@ function renderMarkdownReport(artifact: {
       }
     }
 
-    lines.push(
-      "",
-      `Recommended action: ${result.report.recommendedAction}`,
-      ""
-    );
+    lines.push("", `Recommended action: ${result.report.recommendedAction}`, "");
   }
 
   return `${lines.join("\n")}\n`;

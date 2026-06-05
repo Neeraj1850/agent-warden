@@ -4,10 +4,7 @@ import type {
   ReportFindingSeverity,
   SimulationResult
 } from "../types/report.types.js";
-import type {
-  ActionType,
-  ApprovalFinding
-} from "../types/transaction.types.js";
+import type { ActionType, ApprovalFinding } from "../types/transaction.types.js";
 
 export function buildReportNarrative(input: {
   verdict: Verdict;
@@ -43,7 +40,7 @@ export function buildReportNarrative(input: {
       verdict: input.verdict
     }),
     findings: uniqueFindings,
-    recommendedAction: recommendedAction(input),
+    recommendedAction: recommendedAction(input)
   };
 }
 
@@ -58,10 +55,7 @@ function buildExplanation(input: {
     return `AgentWarden decoded the transaction as ${input.actionLabel} and found no deterministic policy violations before signing. ${input.simulationResult.summary}`;
   }
 
-  const issueText =
-    input.findingCount === 1
-      ? "1 issue"
-      : `${input.findingCount} issues`;
+  const issueText = input.findingCount === 1 ? "1 issue" : `${input.findingCount} issues`;
 
   return `AgentWarden decoded the transaction as ${input.actionLabel} and found ${issueText} before signing. Primary finding: ${input.primaryFinding.detail}`;
 }

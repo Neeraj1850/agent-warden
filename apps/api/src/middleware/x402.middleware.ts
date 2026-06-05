@@ -1,17 +1,14 @@
 ﻿import type { Express, RequestHandler } from "express";
 import type { ApiEnv } from "../config/env.js";
 
-export async function installX402Middleware(
-  app: Express,
-  env: ApiEnv
-): Promise<void> {
+export async function installX402Middleware(app: Express, env: ApiEnv): Promise<void> {
   if (!env.x402Enabled) {
     return;
   }
 
   if (env.x402Mode === "mock") {
     app.use(mockX402Middleware);
-    console.log("[x402] mock middleware enabled route=\"POST /analyze\"");
+    console.log('[x402] mock middleware enabled route="POST /analyze"');
     return;
   }
 
@@ -19,12 +16,15 @@ export async function installX402Middleware(
     throw new Error("X402_PAY_TO is required when X402_MODE=real");
   }
 
-  const [{ paymentMiddleware, x402ResourceServer }, { ExactEvmScheme }, { HTTPFacilitatorClient }] =
-    await Promise.all([
-      import("@x402/express"),
-      import("@x402/evm/exact/server"),
-      import("@x402/core/server")
-    ]);
+  const [
+    { paymentMiddleware, x402ResourceServer },
+    { ExactEvmScheme },
+    { HTTPFacilitatorClient }
+  ] = await Promise.all([
+    import("@x402/express"),
+    import("@x402/evm/exact/server"),
+    import("@x402/core/server")
+  ]);
 
   const facilitatorClient = new HTTPFacilitatorClient({
     url: env.x402FacilitatorUrl

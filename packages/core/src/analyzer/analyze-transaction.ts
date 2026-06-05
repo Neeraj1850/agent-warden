@@ -48,10 +48,7 @@ function buildSecurityReport(
   simulationOverride: SimulationResult
 ): SecurityReport {
   const transactionEnvelope = detectTransactionEnvelope(request.transaction);
-  const assetDeltas = inferStaticBalanceDeltas(
-    request.transaction,
-    decodedTransaction
-  );
+  const assetDeltas = inferStaticBalanceDeltas(request.transaction, decodedTransaction);
   const policyDecision = evaluatePolicies(
     request.intent,
     request.transaction,
@@ -153,10 +150,7 @@ async function ethCallSimulation(
         engine: "eth_call",
         summary: "eth_call simulation reverted or failed.",
         revertReason: body.error.message ?? JSON.stringify(body.error.data),
-        balanceDeltas: inferStaticBalanceDeltas(
-          request.transaction,
-          decodedTransaction
-        )
+        balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
       };
     }
 

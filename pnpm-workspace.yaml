@@ -2,3 +2,5 @@ packages:
   - "apps/*"
   - "examples/*"
   - "packages/*"
+  # Foundry owns contracts/. Keep it outside pnpm until it has a package.json.
+  # scripts/ contains repo helper scripts, not a package.

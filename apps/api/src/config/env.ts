@@ -18,7 +18,6 @@ export function getEnv(): ApiEnv {
     x402PayTo: (process.env.X402_PAY_TO ?? "") as `0x${string}` | "",
     x402Network: process.env.X402_NETWORK ?? "eip155:84532",
     x402Price: process.env.X402_PRICE ?? "$0.001",
-    x402FacilitatorUrl:
-      process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator"
+    x402FacilitatorUrl: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator"
   };
 }

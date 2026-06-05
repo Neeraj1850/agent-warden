@@ -4,10 +4,7 @@ import type {
   DecodedTransaction,
   UnsignedEvmTransaction
 } from "../types/transaction.types.js";
-import {
-  areAddressesEqual,
-  parseAmount
-} from "../utils/validation.js";
+import { areAddressesEqual, parseAmount } from "../utils/validation.js";
 
 export function matchIntent(
   intent: TransactionIntent,
@@ -36,7 +33,11 @@ export function matchIntent(
     });
   }
 
-  if (intent.tokenAddress && decoded.tokenAddress && !areAddressesEqual(intent.tokenAddress, decoded.tokenAddress)) {
+  if (
+    intent.tokenAddress &&
+    decoded.tokenAddress &&
+    !areAddressesEqual(intent.tokenAddress, decoded.tokenAddress)
+  ) {
     violations.push({
       code: "TOKEN_MISMATCH",
       severity: "high",
@@ -46,11 +47,16 @@ export function matchIntent(
     });
   }
 
-  if (!intent.allowNativeValue && BigInt(transaction.value ?? "0") > 0n && decoded.functionName !== "native.transfer") {
+  if (
+    !intent.allowNativeValue &&
+    BigInt(transaction.value ?? "0") > 0n &&
+    decoded.functionName !== "native.transfer"
+  ) {
     violations.push({
       code: "UNEXPECTED_NATIVE_VALUE",
       severity: "high",
-      message: "Transaction includes native value but intent did not explicitly allow it.",
+      message:
+        "Transaction includes native value but intent did not explicitly allow it.",
       expected: "0",
       actual: transaction.value ?? "0"
     });
@@ -96,17 +102,23 @@ export function matchIntent(
     violations.push({
       code: "ACTION_MISMATCH",
       severity: "high",
-      message: "Intent expects a native transfer, but transaction performs a different action.",
+      message:
+        "Intent expects a native transfer, but transaction performs a different action.",
       expected: "native_transfer",
       actual: decoded.actionType ?? decoded.functionName
     });
   }
 
-  if (intent.action === "nft_transfer" && !decoded.actionType?.startsWith("erc721") && !decoded.actionType?.startsWith("erc1155")) {
+  if (
+    intent.action === "nft_transfer" &&
+    !decoded.actionType?.startsWith("erc721") &&
+    !decoded.actionType?.startsWith("erc1155")
+  ) {
     violations.push({
       code: "ACTION_MISMATCH",
       severity: "high",
-      message: "Intent expects an NFT transfer, but transaction performs a different action.",
+      message:
+        "Intent expects an NFT transfer, but transaction performs a different action.",
       expected: "nft_transfer",
       actual: decoded.actionType ?? decoded.functionName
     });
@@ -136,7 +148,8 @@ export function matchIntent(
     violations.push({
       code: "ACTION_MISMATCH",
       severity: "high",
-      message: "Intent expects a contract deployment, but transaction performs a different action.",
+      message:
+        "Intent expects a contract deployment, but transaction performs a different action.",
       expected: "deployment",
       actual: decoded.actionType ?? decoded.functionName
     });
@@ -165,7 +178,11 @@ function matchTransferIntent(
   decoded: DecodedTransaction,
   violations: PolicyViolation[]
 ): void {
-  if (intent.recipient && decoded.recipient && !areAddressesEqual(intent.recipient, decoded.recipient)) {
+  if (
+    intent.recipient &&
+    decoded.recipient &&
+    !areAddressesEqual(intent.recipient, decoded.recipient)
+  ) {
     violations.push({
       code: "RECIPIENT_MISMATCH",
       severity: "critical",
@@ -181,7 +198,11 @@ function matchApprovalIntent(
   decoded: DecodedTransaction,
   violations: PolicyViolation[]
 ): void {
-  if (intent.spender && decoded.spender && !areAddressesEqual(intent.spender, decoded.spender)) {
+  if (
+    intent.spender &&
+    decoded.spender &&
+    !areAddressesEqual(intent.spender, decoded.spender)
+  ) {
     violations.push({
       code: "SPENDER_MISMATCH",
       severity: "critical",
@@ -191,7 +212,11 @@ function matchApprovalIntent(
     });
   }
 
-  if (intent.spender && decoded.operator && !areAddressesEqual(intent.spender, decoded.operator)) {
+  if (
+    intent.spender &&
+    decoded.operator &&
+    !areAddressesEqual(intent.spender, decoded.operator)
+  ) {
     violations.push({
       code: "OPERATOR_MISMATCH",
       severity: "critical",

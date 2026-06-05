@@ -6,7 +6,8 @@ export class AnvilSimulator implements TransactionSimulator {
     return {
       status: "not_run",
       engine: "anvil",
-      summary: "Anvil fork simulator placeholder. Local fork execution is a future integration.",
+      summary:
+        "Anvil fork simulator placeholder. Local fork execution is a future integration.",
       balanceDeltas: []
     };
   }
