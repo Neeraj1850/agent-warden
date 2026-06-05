@@ -54,6 +54,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /analyze-signature:
+    post:
+      summary: Analyze an off-chain signature request before signing
+      description: Returns a deterministic signature security report with an ALLOW, WARN, or BLOCK verdict.
+      operationId: analyzeSignature
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignatureAnalysisRequest"
+      responses:
+        "200":
+          description: Signature security report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SignatureSecurityReport"
+        "400":
+          description: Malformed request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     Address:
@@ -79,6 +103,59 @@ components:
           $ref: "#/components/schemas/TransactionIntent"
         transaction:
           $ref: "#/components/schemas/UnsignedEvmTransaction"
+    SignatureAnalysisRequest:
+      type: object
+      required:
+        - intent
+        - payload
+      properties:
+        requestId:
+          type: string
+        intent:
+          $ref: "#/components/schemas/SignatureIntent"
+        payload:
+          $ref: "#/components/schemas/SignaturePayload"
+    SignatureIntent:
+      type: object
+      required:
+        - action
+        - chainId
+        - from
+      properties:
+        action:
+          enum:
+            - login
+            - permit
+            - authorization
+            - unknown
+        chainId:
+          type: integer
+          minimum: 1
+        from:
+          $ref: "#/components/schemas/Address"
+        verifyingContract:
+          $ref: "#/components/schemas/Address"
+        spender:
+          $ref: "#/components/schemas/Address"
+        maxAmount:
+          $ref: "#/components/schemas/DecimalString"
+        description:
+          type: string
+    SignaturePayload:
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          enum:
+            - eip712_typed_data
+            - personal_sign
+            - eth_sign
+            - unknown
+        typedData:
+          type: object
+        message:
+          type: string
     TransactionIntent:
       type: object
       required:
@@ -236,6 +313,40 @@ components:
             type: object
         simulationResult:
           type: object
+        saferAlternative:
+          type: string
+        reportHash:
+          type: string
+          pattern: "^0x[a-f0-9]{64}$"
+    SignatureSecurityReport:
+      type: object
+      required:
+        - verdict
+        - riskScore
+        - actionType
+        - decodedSignature
+        - policyViolations
+        - reportHash
+      properties:
+        requestId:
+          type: string
+        verdict:
+          enum:
+            - ALLOW
+            - WARN
+            - BLOCK
+        riskScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+        actionType:
+          type: string
+        decodedSignature:
+          type: object
+        policyViolations:
+          type: array
+          items:
+            type: object
         saferAlternative:
           type: string
         reportHash:

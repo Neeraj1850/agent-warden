@@ -1,6 +1,13 @@
 ﻿import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import type { AnalysisRequest } from "@agent-warden/types";
+import type { SignatureAnalysisRequest } from "@agent-warden/types";
+import {
+  analyzeSignatureToolDescription,
+  analyzeSignatureToolInputSchema,
+  analyzeSignatureToolName,
+  executeAnalyzeSignatureTool
+} from "./tools/analyze-signature.tool.js";
 import {
   analyzeTransactionToolDescription,
   analyzeTransactionToolInputSchema,
@@ -46,6 +53,12 @@ export function createMcpServer(): McpServer {
       executeDecodeCalldataTool(input as Parameters<typeof executeDecodeCalldataTool>[0])
   );
   server.tool(
+    analyzeSignatureToolName,
+    analyzeSignatureToolDescription,
+    analyzeSignatureToolInputSchema,
+    async (input) => executeAnalyzeSignatureTool(input as SignatureAnalysisRequest)
+  );
+  server.tool(
     getPolicyToolName,
     getPolicyToolDescription,
     getPolicyToolInputSchema,
@@ -76,6 +89,10 @@ if (process.argv.includes("--describe")) {
           {
             name: decodeCalldataToolName,
             description: decodeCalldataToolDescription
+          },
+          {
+            name: analyzeSignatureToolName,
+            description: analyzeSignatureToolDescription
           },
           {
             name: getPolicyToolName,

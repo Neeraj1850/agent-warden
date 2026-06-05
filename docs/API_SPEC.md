@@ -47,3 +47,46 @@ The V1 response also includes:
 - `approvalFindings`
 - `benchmarkProfile`
 - `simulationResult.revertReason` when an RPC simulation fails
+
+## `POST /analyze-signature`
+
+Analyzes an off-chain signature request such as EIP-712 typed data,
+`personal_sign`, or `eth_sign`.
+
+### Request
+
+```json
+{
+  "requestId": "sig-1",
+  "intent": {
+    "action": "permit",
+    "chainId": 5042002,
+    "from": "0x1111111111111111111111111111111111111111",
+    "verifyingContract": "0x2222222222222222222222222222222222222222",
+    "spender": "0x3333333333333333333333333333333333333333",
+    "maxAmount": "1000000"
+  },
+  "payload": {
+    "kind": "eip712_typed_data",
+    "typedData": {
+      "domain": {
+        "name": "TestToken",
+        "chainId": 5042002,
+        "verifyingContract": "0x2222222222222222222222222222222222222222"
+      },
+      "primaryType": "Permit",
+      "message": {
+        "owner": "0x1111111111111111111111111111111111111111",
+        "spender": "0x3333333333333333333333333333333333333333",
+        "value": "1000000",
+        "deadline": "9999999999"
+      }
+    }
+  }
+}
+```
+
+### Response
+
+Returns a `SignatureSecurityReport` with verdict, risk score, decoded signature,
+policy violations, safer alternative, and report hash.

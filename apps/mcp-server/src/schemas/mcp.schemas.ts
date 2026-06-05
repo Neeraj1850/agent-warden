@@ -60,3 +60,38 @@ export const analyzeTransactionInputSchema = {
   intent: intentSchema,
   transaction: transactionSchema
 };
+
+export const signatureIntentSchema = z.object({
+  action: z.enum(["login", "permit", "authorization", "unknown"]),
+  chainId: z.number().int().positive(),
+  from: addressSchema,
+  verifyingContract: addressSchema.optional(),
+  spender: addressSchema.optional(),
+  maxAmount: decimalSchema.optional(),
+  description: z.string().optional()
+});
+
+export const typedDataSchema = z.object({
+  domain: z
+    .object({
+      name: z.string().optional(),
+      version: z.string().optional(),
+      chainId: z.union([z.number().int().positive(), decimalSchema]).optional(),
+      verifyingContract: addressSchema.optional()
+    })
+    .optional(),
+  primaryType: z.string(),
+  message: z.record(z.unknown())
+});
+
+export const signaturePayloadSchema = z.object({
+  kind: z.enum(["eip712_typed_data", "personal_sign", "eth_sign", "unknown"]),
+  typedData: typedDataSchema.optional(),
+  message: z.string().optional()
+});
+
+export const analyzeSignatureInputSchema = {
+  requestId: z.string().optional(),
+  intent: signatureIntentSchema,
+  payload: signaturePayloadSchema
+};

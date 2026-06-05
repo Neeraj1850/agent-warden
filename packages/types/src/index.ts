@@ -5,7 +5,10 @@ export type {
   SecurityReport,
   SimulationResult,
   ReportFinding,
-  RiskVector
+  RiskVector,
+  SignatureAnalysisRequest,
+  SignatureAnalysisRequest as SignatureAnalysisInput,
+  SignatureSecurityReport
 } from "@agent-warden/core";
 export type { PolicyDecision, PolicyViolation, Verdict } from "@agent-warden/core";
 export type {

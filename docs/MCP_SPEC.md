@@ -4,10 +4,15 @@
 
 Accepts the same payload as `POST /analyze`.
 
+## Tool: `analyze_signature`
+
+Accepts the same payload as `POST /analyze-signature`.
+
 ## Behavior
 
 - validates structured intent and unsigned transaction data
 - delegates to the deterministic core analyzer
+- analyzes EIP-712, `personal_sign`, and `eth_sign` payloads through the signature tool
 - returns the full security report, including summary, findings, recommended action, and report hash
 - marks the MCP tool result as `isError: true` when the verdict is `BLOCK`
 - logs verdict, risk score, and report hash to stderr for local demo tracing
@@ -45,6 +50,7 @@ The client:
 ## Additional Tools
 
 - `decode_calldata`: decodes unsigned EVM transaction calldata without policy or scoring.
+- `analyze_signature`: analyzes typed/off-chain signature requests before signing.
 - `get_policy`: returns the active deterministic policy flags.
 - `check_address`: validates one EVM address and optionally calls GoPlus when `GOPLUS_ENABLED=true`.
 

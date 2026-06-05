@@ -1,6 +1,7 @@
 import express from "express";
 import { randomUUID } from "node:crypto";
 import type { ApiEnv } from "./config/env.js";
+import { createAnalyzeSignatureRouter } from "./routes/analyze-signature.route.js";
 import { createAnalyzeRouter } from "./routes/analyze.route.js";
 import { createHealthRouter } from "./routes/health.route.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
@@ -16,6 +17,7 @@ export async function createApiServer(env: ApiEnv): Promise<express.Express> {
   await installX402Middleware(app, env);
   app.use(createHealthRouter());
   app.use(createAnalyzeRouter());
+  app.use(createAnalyzeSignatureRouter());
   app.use(errorMiddleware);
 
   return app;
