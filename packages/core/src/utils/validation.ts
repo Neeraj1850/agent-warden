@@ -201,7 +201,15 @@ function optionalDescription(value: unknown, field: string): string | undefined 
     return undefined;
   }
 
-  return description.replace(/[\u0000-\u001f\u007f]/g, " ").slice(0, 2_000);
+  return [...description]
+    .map((character) => {
+      const codePoint = character.codePointAt(0);
+      return codePoint !== undefined && (codePoint < 32 || codePoint === 127)
+        ? " "
+        : character;
+    })
+    .join("")
+    .slice(0, 2_000);
 }
 
 function optionalAddress(value: unknown, field: string): Address | undefined {
