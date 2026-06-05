@@ -1,5 +1,7 @@
 import type { TransactionIntent } from "../types/intent.types.js";
+import { decodeFunctionData, parseAbi } from "viem";
 import type {
+  Address,
   DecodedAction,
   DecodedTransaction,
   Hex,
@@ -23,10 +25,29 @@ import {
 
 export const ERC20_TRANSFER_SELECTOR = SELECTORS.erc20Transfer;
 export const ERC20_APPROVE_SELECTOR = SELECTORS.erc20Approve;
+const MAX_RECURSIVE_DEPTH = 4;
+const MAX_MULTICALL_CHILDREN = 25;
+const MULTICALL_BYTES_ABI = parseAbi(["function multicall(bytes[] data)"]);
+const MULTICALL_DEADLINE_BYTES_ABI = parseAbi([
+  "function multicall(uint256 deadline, bytes[] data)"
+]);
+const MULTICALL3_AGGREGATE_ABI = parseAbi([
+  "function aggregate((address target, bytes callData)[] calls)"
+]);
+const MULTICALL3_TRY_AGGREGATE_ABI = parseAbi([
+  "function tryAggregate(bool requireSuccess, (address target, bytes callData)[] calls)"
+]);
+const MULTICALL3_AGGREGATE3_ABI = parseAbi([
+  "function aggregate3((address target, bool allowFailure, bytes callData)[] calls)"
+]);
+const MULTICALL3_AGGREGATE3_VALUE_ABI = parseAbi([
+  "function aggregate3Value((address target, bool allowFailure, uint256 value, bytes callData)[] calls)"
+]);
 
 export function decodeCalldata(
   transaction: UnsignedEvmTransaction,
-  intent?: TransactionIntent
+  intent?: TransactionIntent,
+  depth = 0
 ): DecodedTransaction {
   const data = normalizeHexData(transaction.data);
 
@@ -88,7 +109,7 @@ export function decodeCalldata(
   }
 
   if (MULTICALL_SELECTORS.has(selector)) {
-    return withActions(decodeMulticall(transaction, selector));
+    return withActions(decodeMulticall(transaction, selector, intent, depth));
   }
 
   if (PERMIT_SELECTORS.has(selector)) {
@@ -400,8 +421,22 @@ function decodeAccountAbstraction(
 
 function decodeMulticall(
   transaction: UnsignedEvmTransaction,
-  selector: Hex
+  selector: Hex,
+  intent: TransactionIntent | undefined,
+  depth: number
 ): DecodedTransaction {
+  const decodedChildren = decodeMulticallChildren(transaction, selector, intent, depth);
+  if (decodedChildren) {
+    return {
+      functionName: "multicall",
+      actionType: "multicall",
+      selector,
+      contractAddress: normalizeAddress(transaction.to!),
+      decodedActions: decodedChildren.actions,
+      warnings: decodedChildren.warnings
+    };
+  }
+
   const nestedWarnings: string[] = [];
   const nestedActions: DecodedAction[] = [];
   const lowerData = transaction.data.toLowerCase();
@@ -453,6 +488,140 @@ function decodeMulticall(
     decodedActions: nestedActions,
     warnings: nestedWarnings
   };
+}
+
+function decodeMulticallChildren(
+  transaction: UnsignedEvmTransaction,
+  selector: Hex,
+  intent: TransactionIntent | undefined,
+  depth: number
+): { actions: DecodedAction[]; warnings: string[] } | undefined {
+  if (depth >= MAX_RECURSIVE_DEPTH) {
+    return {
+      actions: [],
+      warnings: [`Multicall recursion depth limit ${MAX_RECURSIVE_DEPTH} reached.`]
+    };
+  }
+
+  const calls = extractMulticallCalls(transaction, selector);
+  if (!calls || calls.length === 0) {
+    return undefined;
+  }
+
+  const limitedCalls = calls.slice(0, MAX_MULTICALL_CHILDREN);
+  const actions = limitedCalls.flatMap((call, index) => {
+    const child = decodeCalldata(
+      {
+        chainId: transaction.chainId,
+        from: transaction.from,
+        to: call.target,
+        value: call.value?.toString() ?? "0",
+        data: call.data
+      },
+      intent,
+      depth + 1
+    );
+
+    return (child.decodedActions ?? []).map((action) => ({
+      ...action,
+      warnings: [
+        `Decoded from multicall child ${index}.`,
+        ...(call.value && call.value > 0n
+          ? [`Child call carries native value ${call.value.toString()}.`]
+          : []),
+        ...action.warnings
+      ]
+    }));
+  });
+  const warnings = [
+    `Decoded ${limitedCalls.length} multicall child call${limitedCalls.length === 1 ? "" : "s"}.`
+  ];
+
+  if (calls.length > MAX_MULTICALL_CHILDREN) {
+    warnings.push(
+      `Multicall child limit ${MAX_MULTICALL_CHILDREN} reached; ${calls.length - MAX_MULTICALL_CHILDREN} call(s) were not decoded.`
+    );
+  }
+
+  return { actions, warnings };
+}
+
+function extractMulticallCalls(
+  transaction: UnsignedEvmTransaction,
+  selector: Hex
+): Array<{ target: Address; data: Hex; value?: bigint }> | undefined {
+  try {
+    if (selector === SELECTORS.multicallBytes) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL_BYTES_ABI,
+        data: transaction.data
+      });
+      return decoded.args[0].map((data) => ({
+        target: normalizeAddress(transaction.to!),
+        data: normalizeHexData(data)
+      }));
+    }
+
+    if (selector === SELECTORS.multicallDeadlineBytes) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL_DEADLINE_BYTES_ABI,
+        data: transaction.data
+      });
+      return decoded.args[1].map((data) => ({
+        target: normalizeAddress(transaction.to!),
+        data: normalizeHexData(data)
+      }));
+    }
+
+    if (selector === SELECTORS.multicall3Aggregate) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL3_AGGREGATE_ABI,
+        data: transaction.data
+      });
+      return decoded.args[0].map((call) => ({
+        target: normalizeAddress(call.target),
+        data: normalizeHexData(call.callData)
+      }));
+    }
+
+    if (selector === SELECTORS.multicall3TryAggregate) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL3_TRY_AGGREGATE_ABI,
+        data: transaction.data
+      });
+      return decoded.args[1].map((call) => ({
+        target: normalizeAddress(call.target),
+        data: normalizeHexData(call.callData)
+      }));
+    }
+
+    if (selector === SELECTORS.multicall3Aggregate3) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL3_AGGREGATE3_ABI,
+        data: transaction.data
+      });
+      return decoded.args[0].map((call) => ({
+        target: normalizeAddress(call.target),
+        data: normalizeHexData(call.callData)
+      }));
+    }
+
+    if (selector === SELECTORS.multicall3Aggregate3Value) {
+      const decoded = decodeFunctionData({
+        abi: MULTICALL3_AGGREGATE3_VALUE_ABI,
+        data: transaction.data
+      });
+      return decoded.args[0].map((call) => ({
+        target: normalizeAddress(call.target),
+        data: normalizeHexData(call.callData),
+        value: call.value
+      }));
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
 }
 
 function getWords(data: string, count: number): string[] | undefined {

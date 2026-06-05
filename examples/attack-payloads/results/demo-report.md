@@ -2,7 +2,7 @@
 
 Generated: deterministic-local-run
 Mode: local
-Total: 12
+Total: 15
 Failures: 0
 
 | Payload | Source | Expected | Actual | Risk | Action | Result |
@@ -12,6 +12,9 @@ Failures: 0
 | eliza-erc721-set-approval-for-all | Eliza | BLOCK | BLOCK | 95 | erc721_operator_approval | PASS |
 | erc1155-set-approval-for-all | Generic | BLOCK | BLOCK | 95 | erc1155_operator_approval | PASS |
 | multicall-hidden-approval | GOAT | BLOCK | BLOCK | 100 | multicall | PASS |
+| multicall-decoded-safe-transfer | Generic | WARN | WARN | 45 | multicall | PASS |
+| multicall-decoded-unlimited-approval | GOAT | BLOCK | BLOCK | 100 | multicall | PASS |
+| multicall-decoded-unknown-selector | Generic | BLOCK | BLOCK | 100 | multicall | PASS |
 | eip7702-authorization-list | Generic | BLOCK | BLOCK | 85 | erc20_transfer | PASS |
 | permit-signature-approval | Generic | BLOCK | BLOCK | 100 | permit_signature | PASS |
 | eip4337-hidden-approval | Generic | BLOCK | BLOCK | 85 | account_abstraction | PASS |
@@ -113,6 +116,62 @@ Findings:
 - MEDIUM APPROVAL_ERC20: ERC-20 allowance change. Evidence: standard=erc20, token=0x6666666666666666666666666666666666666666.
 
 Recommended action: Split the multicall into individual transactions or simulate and review every nested call before signing.
+
+## Decoded multicall containing safe ERC-20 transfer
+
+Payload: `multicall-decoded-safe-transfer`
+Source: Generic
+Verdict: WARN
+Risk score: 45
+Action: multicall
+Report hash: `0x68db5db6e992cdc741baf2bfe75a2fa460e6407d95dc9ed28cf24f1a95ab2a3b`
+
+Summary: WARN: multicall classified as medium risk.
+
+AgentWarden decoded the transaction as multicall and found 1 issue before signing. Primary finding: Multicall detected. V1 static analyzer cannot fully prove every nested call.
+
+Findings:
+- MEDIUM MULTICALL_REQUIRES_SIMULATION: Multicall detected. V1 static analyzer cannot fully prove every nested call.
+
+Recommended action: Require explicit human or policy confirmation before signing this transaction.
+
+## Decoded multicall containing unlimited approval
+
+Payload: `multicall-decoded-unlimited-approval`
+Source: GOAT
+Verdict: BLOCK
+Risk score: 100
+Action: multicall
+Report hash: `0x02f4c48ce3d1cdba17aa0dd33216afb1fafc6ff8ff5dabb1305e8d45eabd2186`
+
+Summary: BLOCK: multicall classified as critical risk.
+
+AgentWarden decoded the transaction as multicall and found 3 issues before signing. Primary finding: Transaction creates an unlimited ERC-20 allowance.
+
+Findings:
+- CRITICAL UNLIMITED_APPROVAL: Transaction creates an unlimited ERC-20 allowance. Evidence: expected=bounded approval amount, actual=115792089237316195423570985008687907853269984665640564039457584007913129639935.
+- CRITICAL SUSPICIOUS_MULTICALL: Multicall contains nested approval or swap selectors that require stricter review.
+- CRITICAL APPROVAL_ERC20_UNLIMITED: Unlimited ERC-20 allowance. Evidence: standard=erc20, token=0x2222222222222222222222222222222222222222, spender=0x5555555555555555555555555555555555555555, amount=115792089237316195423570985008687907853269984665640564039457584007913129639935.
+
+Recommended action: Use a bounded approval for the exact intended amount or a short-lived spending allowance.
+
+## Decoded multicall containing unknown selector
+
+Payload: `multicall-decoded-unknown-selector`
+Source: Generic
+Verdict: BLOCK
+Risk score: 100
+Action: multicall
+Report hash: `0x853ed08bae59e044ff4e74d90688872fb046b6f1d203cdb52aec737b3c27645b`
+
+Summary: BLOCK: multicall classified as critical risk.
+
+AgentWarden decoded the transaction as multicall and found 1 issue before signing. Primary finding: Multicall contains an unsupported nested call selector that cannot be proven safe.
+
+Findings:
+- CRITICAL MULTICALL_UNKNOWN_CHILD: Multicall contains an unsupported nested call selector that cannot be proven safe.
+
+Recommended action: Split the multicall into individual calls and reject any nested selector that cannot be decoded independently.
 
 ## EIP-7702 authorization-list transaction
 

@@ -113,6 +113,20 @@ function detectMulticallRisks(decoded: DecodedTransaction): PolicyViolation[] {
     action.actionType.includes("approval")
   );
   const hasNestedSwap = nestedActions.some((action) => action.actionType === "swap");
+  const hasNestedUnknown = nestedActions.some(
+    (action) => action.actionType === "unknown_contract_call"
+  );
+
+  if (hasNestedUnknown) {
+    return [
+      {
+        code: "MULTICALL_UNKNOWN_CHILD",
+        severity: "critical",
+        message:
+          "Multicall contains an unsupported nested call selector that cannot be proven safe."
+      }
+    ];
+  }
 
   if (!hasNestedApproval && !hasNestedSwap) {
     return [
@@ -149,6 +163,10 @@ function buildSaferAlternative(
 
   if (violations.some((violation) => violation.code === "SUSPICIOUS_MULTICALL")) {
     return "Split the multicall into individual transactions or simulate and review every nested call before signing.";
+  }
+
+  if (violations.some((violation) => violation.code === "MULTICALL_UNKNOWN_CHILD")) {
+    return "Split the multicall into individual calls and reject any nested selector that cannot be decoded independently.";
   }
 
   if (violations.some((violation) => violation.code === "PERMIT_SIGNATURE_APPROVAL")) {

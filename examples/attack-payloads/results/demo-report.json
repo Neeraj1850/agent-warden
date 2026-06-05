@@ -1,7 +1,7 @@
 {
   "generatedAt": "deterministic-local-run",
   "mode": "local",
-  "total": 12,
+  "total": 15,
   "failures": 0,
   "results": [
     {
@@ -884,6 +884,617 @@
         },
         "saferAlternative": "Split the multicall into individual transactions or simulate and review every nested call before signing.",
         "reportHash": "0x59f136a6c99dab63e85fffefc8255c9b8eef057508e1c2285028831b50b23478"
+      }
+    },
+    {
+      "id": "multicall-decoded-safe-transfer",
+      "title": "Decoded multicall containing safe ERC-20 transfer",
+      "source": "Generic",
+      "expectedVerdict": "WARN",
+      "passed": true,
+      "request": {
+        "requestId": "multicall-decoded-safe-transfer",
+        "intent": {
+          "action": "multicall",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "description": "Generic benchmark: decoded multicall with a safe child call."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0xac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000044a9059cbb0000000000000000000000003333333333333333333333333333333333333333000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "report": {
+        "requestId": "multicall-decoded-safe-transfer",
+        "verdict": "WARN",
+        "riskScore": 45,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 45,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "WARN: multicall classified as medium risk.",
+        "explanation": "AgentWarden decoded the transaction as multicall and found 1 issue before signing. Primary finding: Multicall detected. V1 static analyzer cannot fully prove every nested call.",
+        "findings": [
+          {
+            "code": "MULTICALL_REQUIRES_SIMULATION",
+            "title": "Multicall Requires Simulation",
+            "severity": "medium",
+            "detail": "Multicall detected. V1 static analyzer cannot fully prove every nested call.",
+            "evidence": []
+          }
+        ],
+        "recommendedAction": "Require explicit human or policy confirmation before signing this transaction.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "multicall",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ],
+              "evidence": [
+                "selector:0xac9650d8",
+                "action:multicall",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            },
+            {
+              "id": "node-1",
+              "parentId": "node-0",
+              "depth": 1,
+              "kind": "multicall_child",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "warnings": [
+                "Decoded from multicall child 0."
+              ],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "from": "node-0",
+              "to": "node-1",
+              "relationship": "transfers"
+            }
+          ],
+          "maxDepth": 1,
+          "hasNestedExecution": true,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "multicall",
+            "functionName": "multicall",
+            "selector": "0xac9650d8",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "unknown",
+            "warnings": [
+              "Decoded 1 multicall child call."
+            ]
+          },
+          {
+            "actionType": "erc20_transfer",
+            "functionName": "erc20.transfer",
+            "selector": "0xa9059cbb",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "erc20",
+            "recipient": "0x3333333333333333333333333333333333333333",
+            "amount": "1",
+            "rawAmount": "1",
+            "warnings": [
+              "Decoded from multicall child 0."
+            ]
+          }
+        ],
+        "assetDeltas": [],
+        "approvalFindings": [],
+        "benchmarkProfile": "generic",
+        "decodedTransaction": {
+          "functionName": "multicall",
+          "actionType": "multicall",
+          "selector": "0xac9650d8",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "decodedActions": [
+            {
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ]
+            },
+            {
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "rawAmount": "1",
+              "warnings": [
+                "Decoded from multicall child 0."
+              ]
+            }
+          ],
+          "warnings": [
+            "Decoded 1 multicall child call."
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "MULTICALL_REQUIRES_SIMULATION",
+            "severity": "medium",
+            "message": "Multicall detected. V1 static analyzer cannot fully prove every nested call."
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": []
+        },
+        "reportHash": "0x68db5db6e992cdc741baf2bfe75a2fa460e6407d95dc9ed28cf24f1a95ab2a3b"
+      }
+    },
+    {
+      "id": "multicall-decoded-unlimited-approval",
+      "title": "Decoded multicall containing unlimited approval",
+      "source": "GOAT",
+      "expectedVerdict": "BLOCK",
+      "passed": true,
+      "request": {
+        "requestId": "multicall-decoded-unlimited-approval",
+        "intent": {
+          "action": "multicall",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "description": "GOAT benchmark: decoded plugin bundle hides an unlimited approval."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0xac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000044095ea7b30000000000000000000000005555555555555555555555555555555555555555ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "report": {
+        "requestId": "multicall-decoded-unlimited-approval",
+        "verdict": "BLOCK",
+        "riskScore": 100,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 90,
+          "behaviorRisk": 95,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "BLOCK: multicall classified as critical risk.",
+        "explanation": "AgentWarden decoded the transaction as multicall and found 3 issues before signing. Primary finding: Transaction creates an unlimited ERC-20 allowance.",
+        "findings": [
+          {
+            "code": "UNLIMITED_APPROVAL",
+            "title": "Unlimited Approval",
+            "severity": "critical",
+            "detail": "Transaction creates an unlimited ERC-20 allowance.",
+            "evidence": [
+              "expected=bounded approval amount",
+              "actual=115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            ]
+          },
+          {
+            "code": "SUSPICIOUS_MULTICALL",
+            "title": "Suspicious Multicall",
+            "severity": "critical",
+            "detail": "Multicall contains nested approval or swap selectors that require stricter review.",
+            "evidence": []
+          },
+          {
+            "code": "APPROVAL_ERC20_UNLIMITED",
+            "title": "ERC20 unlimited approval",
+            "severity": "critical",
+            "detail": "Unlimited ERC-20 allowance.",
+            "evidence": [
+              "standard=erc20",
+              "token=0x2222222222222222222222222222222222222222",
+              "spender=0x5555555555555555555555555555555555555555",
+              "amount=115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            ]
+          }
+        ],
+        "recommendedAction": "Use a bounded approval for the exact intended amount or a short-lived spending allowance.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "multicall",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ],
+              "evidence": [
+                "selector:0xac9650d8",
+                "action:multicall",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            },
+            {
+              "id": "node-1",
+              "parentId": "node-0",
+              "depth": 1,
+              "kind": "multicall_child",
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+              "warnings": [
+                "Decoded from multicall child 0."
+              ],
+              "evidence": [
+                "selector:0x095ea7b3",
+                "action:erc20_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "spender:0x5555555555555555555555555555555555555555",
+                "amount:115792089237316195423570985008687907853269984665640564039457584007913129639935"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "from": "node-0",
+              "to": "node-1",
+              "relationship": "approves"
+            }
+          ],
+          "maxDepth": 1,
+          "hasNestedExecution": true,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "multicall",
+            "functionName": "multicall",
+            "selector": "0xac9650d8",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "unknown",
+            "warnings": [
+              "Decoded 1 multicall child call."
+            ]
+          },
+          {
+            "actionType": "erc20_approval",
+            "functionName": "erc20.approve",
+            "selector": "0x095ea7b3",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "erc20",
+            "spender": "0x5555555555555555555555555555555555555555",
+            "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "rawAmount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "warnings": [
+              "Decoded from multicall child 0."
+            ]
+          }
+        ],
+        "assetDeltas": [],
+        "approvalFindings": [
+          {
+            "standard": "erc20",
+            "owner": "0x1111111111111111111111111111111111111111",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "spender": "0x5555555555555555555555555555555555555555",
+            "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            "isUnlimited": true,
+            "risk": "critical",
+            "message": "Unlimited ERC-20 allowance."
+          }
+        ],
+        "benchmarkProfile": "goat",
+        "decodedTransaction": {
+          "functionName": "multicall",
+          "actionType": "multicall",
+          "selector": "0xac9650d8",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "decodedActions": [
+            {
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ]
+            },
+            {
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+              "rawAmount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+              "warnings": [
+                "Decoded from multicall child 0."
+              ]
+            }
+          ],
+          "warnings": [
+            "Decoded 1 multicall child call."
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "UNLIMITED_APPROVAL",
+            "severity": "critical",
+            "message": "Transaction creates an unlimited ERC-20 allowance.",
+            "expected": "bounded approval amount",
+            "actual": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+          },
+          {
+            "code": "SUSPICIOUS_MULTICALL",
+            "severity": "critical",
+            "message": "Multicall contains nested approval or swap selectors that require stricter review."
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": []
+        },
+        "saferAlternative": "Use a bounded approval for the exact intended amount or a short-lived spending allowance.",
+        "reportHash": "0x02f4c48ce3d1cdba17aa0dd33216afb1fafc6ff8ff5dabb1305e8d45eabd2186"
+      }
+    },
+    {
+      "id": "multicall-decoded-unknown-selector",
+      "title": "Decoded multicall containing unknown selector",
+      "source": "Generic",
+      "expectedVerdict": "BLOCK",
+      "passed": true,
+      "request": {
+        "requestId": "multicall-decoded-unknown-selector",
+        "intent": {
+          "action": "multicall",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "description": "Generic benchmark: decoded multicall contains opaque calldata."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0xac9650d80000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000004deadbeef00000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "report": {
+        "requestId": "multicall-decoded-unknown-selector",
+        "verdict": "BLOCK",
+        "riskScore": 100,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 45,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "BLOCK: multicall classified as critical risk.",
+        "explanation": "AgentWarden decoded the transaction as multicall and found 1 issue before signing. Primary finding: Multicall contains an unsupported nested call selector that cannot be proven safe.",
+        "findings": [
+          {
+            "code": "MULTICALL_UNKNOWN_CHILD",
+            "title": "Multicall Unknown Child",
+            "severity": "critical",
+            "detail": "Multicall contains an unsupported nested call selector that cannot be proven safe.",
+            "evidence": []
+          }
+        ],
+        "recommendedAction": "Split the multicall into individual calls and reject any nested selector that cannot be decoded independently.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "multicall",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ],
+              "evidence": [
+                "selector:0xac9650d8",
+                "action:multicall",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            },
+            {
+              "id": "node-1",
+              "parentId": "node-0",
+              "depth": 1,
+              "kind": "multicall_child",
+              "actionType": "unknown_contract_call",
+              "functionName": "unknown",
+              "selector": "0xdeadbeef",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded from multicall child 0.",
+                "Unsupported function selector 0xdeadbeef"
+              ],
+              "evidence": [
+                "selector:0xdeadbeef",
+                "action:unknown_contract_call",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222"
+              ]
+            }
+          ],
+          "edges": [
+            {
+              "from": "node-0",
+              "to": "node-1",
+              "relationship": "contains"
+            }
+          ],
+          "maxDepth": 1,
+          "hasNestedExecution": true,
+          "hasUnknownNode": true
+        },
+        "decodedActions": [
+          {
+            "actionType": "multicall",
+            "functionName": "multicall",
+            "selector": "0xac9650d8",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "unknown",
+            "warnings": [
+              "Decoded 1 multicall child call."
+            ]
+          },
+          {
+            "actionType": "unknown_contract_call",
+            "functionName": "unknown",
+            "selector": "0xdeadbeef",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "unknown",
+            "warnings": [
+              "Decoded from multicall child 0.",
+              "Unsupported function selector 0xdeadbeef"
+            ]
+          }
+        ],
+        "assetDeltas": [],
+        "approvalFindings": [],
+        "benchmarkProfile": "generic",
+        "decodedTransaction": {
+          "functionName": "multicall",
+          "actionType": "multicall",
+          "selector": "0xac9650d8",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "decodedActions": [
+            {
+              "actionType": "multicall",
+              "functionName": "multicall",
+              "selector": "0xac9650d8",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded 1 multicall child call."
+              ]
+            },
+            {
+              "actionType": "unknown_contract_call",
+              "functionName": "unknown",
+              "selector": "0xdeadbeef",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Decoded from multicall child 0.",
+                "Unsupported function selector 0xdeadbeef"
+              ]
+            }
+          ],
+          "warnings": [
+            "Decoded 1 multicall child call."
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "MULTICALL_UNKNOWN_CHILD",
+            "severity": "critical",
+            "message": "Multicall contains an unsupported nested call selector that cannot be proven safe."
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": []
+        },
+        "saferAlternative": "Split the multicall into individual calls and reject any nested selector that cannot be decoded independently.",
+        "reportHash": "0x853ed08bae59e044ff4e74d90688872fb046b6f1d203cdb52aec737b3c27645b"
       }
     },
     {

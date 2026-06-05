@@ -14,6 +14,10 @@ export const SELECTORS = {
   erc1155SafeBatchTransferFrom: "0x2eb2c2d6",
   multicallBytes: "0xac9650d8",
   multicallDeadlineBytes: "0x5ae401dc",
+  multicall3Aggregate: "0x252dba42",
+  multicall3TryAggregate: "0xbce38bd7",
+  multicall3Aggregate3: "0x82ad56cb",
+  multicall3Aggregate3Value: "0x174dea71",
   uniswapV2SwapExactTokensForTokens: "0x38ed1739",
   uniswapV2SwapTokensForExactTokens: "0x8803dbee",
   uniswapV2SwapExactEthForTokens: "0x7ff36ab5",
@@ -45,7 +49,11 @@ export const SWAP_SELECTORS = new Set<Hex>([
 
 export const MULTICALL_SELECTORS = new Set<Hex>([
   SELECTORS.multicallBytes,
-  SELECTORS.multicallDeadlineBytes
+  SELECTORS.multicallDeadlineBytes,
+  SELECTORS.multicall3Aggregate,
+  SELECTORS.multicall3TryAggregate,
+  SELECTORS.multicall3Aggregate3,
+  SELECTORS.multicall3Aggregate3Value
 ]);
 
 export const PERMIT_SELECTORS = new Set<Hex>([

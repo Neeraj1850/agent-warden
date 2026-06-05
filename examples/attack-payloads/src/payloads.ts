@@ -141,6 +141,72 @@ export const demoPayloads: DemoPayload[] = [
     }
   },
   {
+    id: "multicall-decoded-safe-transfer",
+    title: "Decoded multicall containing safe ERC-20 transfer",
+    source: "Generic",
+    expectedVerdict: "WARN",
+    request: {
+      requestId: "multicall-decoded-safe-transfer",
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM,
+        description: "Generic benchmark: decoded multicall with a safe child call."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeMulticallBytes([encodeErc20Transfer(RECIPIENT, 1n)])
+      }
+    }
+  },
+  {
+    id: "multicall-decoded-unlimited-approval",
+    title: "Decoded multicall containing unlimited approval",
+    source: "GOAT",
+    expectedVerdict: "BLOCK",
+    request: {
+      requestId: "multicall-decoded-unlimited-approval",
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM,
+        description: "GOAT benchmark: decoded plugin bundle hides an unlimited approval."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeMulticallBytes([encodeErc20Approve(SPENDER, MAX_UINT256)])
+      }
+    }
+  },
+  {
+    id: "multicall-decoded-unknown-selector",
+    title: "Decoded multicall containing unknown selector",
+    source: "Generic",
+    expectedVerdict: "BLOCK",
+    request: {
+      requestId: "multicall-decoded-unknown-selector",
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM,
+        description: "Generic benchmark: decoded multicall contains opaque calldata."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeMulticallBytes(["0xdeadbeef"])
+      }
+    }
+  },
+  {
     id: "eip7702-authorization-list",
     title: "EIP-7702 authorization-list transaction",
     source: "Generic",
@@ -317,6 +383,30 @@ function encodeErc20Approve(spender: Address, amount: bigint): `0x${string}` {
 
 function encodeSetApprovalForAll(operator: Address, approved: boolean): `0x${string}` {
   return `0xa22cb465${encodeAddress(operator)}${encodeUint256(approved ? 1n : 0n)}`;
+}
+
+function encodeMulticallBytes(calls: `0x${string}`[]): `0x${string}` {
+  const offsets: string[] = [];
+  const elements: string[] = [];
+  let cursor = BigInt(calls.length * 32);
+
+  for (const call of calls) {
+    const element = encodeDynamicBytes(call);
+    offsets.push(encodeUint256(cursor));
+    elements.push(element);
+    cursor += BigInt(element.length / 2);
+  }
+
+  return `0xac9650d8${encodeUint256(32n)}${encodeUint256(BigInt(calls.length))}${offsets.join("")}${elements.join("")}`;
+}
+
+function encodeDynamicBytes(value: `0x${string}`): string {
+  const bytes = value.slice(2);
+  const byteLength = BigInt(bytes.length / 2);
+  return `${encodeUint256(byteLength)}${bytes.padEnd(
+    Math.ceil(bytes.length / 64) * 64,
+    "0"
+  )}`;
 }
 
 function encodeAddress(address: Address): string {

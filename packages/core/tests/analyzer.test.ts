@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { encodeFunctionData, parseAbi } from "viem";
 import {
   analyzeTransaction,
   analyzeTransactionWithSimulation,
@@ -14,6 +15,11 @@ const USDC = "0x2222222222222222222222222222222222222222" as Address;
 const RECIPIENT = "0x3333333333333333333333333333333333333333" as Address;
 const OTHER = "0x4444444444444444444444444444444444444444" as Address;
 const SPENDER = "0x5555555555555555555555555555555555555555" as Address;
+const ROUTER = "0x6666666666666666666666666666666666666666" as Address;
+const MULTICALL_BYTES_ABI = parseAbi(["function multicall(bytes[] data)"]);
+const MULTICALL3_AGGREGATE_ABI = parseAbi([
+  "function aggregate((address target, bytes callData)[] calls)"
+]);
 
 describe("analyzeTransaction", () => {
   it("allows a safe USDC transfer matching intent", () => {
@@ -284,6 +290,86 @@ describe("analyzeTransaction", () => {
     );
   });
 
+  it("warns on decoded multicall with only a safe transfer child", () => {
+    const report = analyzeTransaction({
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: USDC,
+        data: encodeMulticallBytes([encodeErc20Transfer(RECIPIENT, 1n)])
+      }
+    });
+
+    assert.equal(report.verdict, "WARN");
+    assert.equal(report.actionType, "multicall");
+    assert.equal(report.decodedActions[1]?.actionType, "erc20_transfer");
+    assert.equal(report.decodedActions[1]?.recipient, RECIPIENT);
+    assert.equal(report.executionGraph.nodes[1]?.recipient, RECIPIENT);
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "MULTICALL_REQUIRES_SIMULATION"
+      )
+    );
+  });
+
+  it("blocks decoded multicall with an unlimited approval child", () => {
+    const report = analyzeTransaction({
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: USDC,
+        data: encodeMulticallBytes([encodeErc20Approve(SPENDER, MAX_UINT256)])
+      }
+    });
+
+    assert.equal(report.verdict, "BLOCK");
+    assert.equal(report.decodedActions[1]?.actionType, "erc20_approval");
+    assert.equal(report.decodedActions[1]?.spender, SPENDER);
+    assert.ok(
+      report.policyViolations.some((violation) => violation.code === "UNLIMITED_APPROVAL")
+    );
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "SUSPICIOUS_MULTICALL"
+      )
+    );
+  });
+
+  it("blocks decoded aggregate multicall with an unknown child selector", () => {
+    const report = analyzeTransaction({
+      intent: {
+        action: "multicall",
+        chainId: CHAIN_ID,
+        from: FROM
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: ROUTER,
+        data: encodeAggregate([{ target: USDC, callData: "0xdeadbeef" }])
+      }
+    });
+
+    assert.equal(report.verdict, "BLOCK");
+    assert.equal(report.decodedActions[1]?.actionType, "unknown_contract_call");
+    assert.equal(report.decodedActions[1]?.contractAddress, USDC);
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "MULTICALL_UNKNOWN_CHILD"
+      )
+    );
+  });
+
   it("blocks EIP-7702 authorization-list transactions by default", () => {
     const report = analyzeTransaction({
       intent: {
@@ -469,6 +555,24 @@ function encodeErc1155SafeTransferFrom(
   amount: bigint
 ): `0x${string}` {
   return `0xf242432a${encodeAddress(from)}${encodeAddress(to)}${encodeUint256(tokenId)}${encodeUint256(amount)}${encodeUint256(160n)}`;
+}
+
+function encodeMulticallBytes(calls: `0x${string}`[]): `0x${string}` {
+  return encodeFunctionData({
+    abi: MULTICALL_BYTES_ABI,
+    functionName: "multicall",
+    args: [calls]
+  });
+}
+
+function encodeAggregate(
+  calls: Array<{ target: Address; callData: `0x${string}` }>
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: MULTICALL3_AGGREGATE_ABI,
+    functionName: "aggregate",
+    args: [calls]
+  });
 }
 
 function encodeAddress(address: Address): string {

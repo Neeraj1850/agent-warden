@@ -9,6 +9,7 @@ It demonstrates common agent signing risks:
 - ERC-721 collection-wide operator approval
 - ERC-1155 collection-wide operator approval
 - suspicious multicall with hidden approval
+- decoded multicall with safe, approval, and unknown child calls
 - EIP-7702 authorization-list transaction
 - EIP-2612/Permit2-style approval bypass
 - EIP-4337 account abstraction bundle
