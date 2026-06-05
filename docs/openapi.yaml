@@ -172,6 +172,7 @@ components:
         - recommendedAction
         - transactionEnvelope
         - actionType
+        - executionGraph
         - decodedActions
         - assetDeltas
         - approvalFindings
@@ -207,6 +208,8 @@ components:
           type: object
         actionType:
           type: string
+        executionGraph:
+          $ref: "#/components/schemas/ExecutionGraph"
         decodedActions:
           type: array
           items:
@@ -282,3 +285,84 @@ components:
           type: integer
           minimum: 0
           maximum: 100
+    ExecutionGraph:
+      type: object
+      required:
+        - rootNodeId
+        - nodes
+        - edges
+        - maxDepth
+        - hasNestedExecution
+        - hasUnknownNode
+      properties:
+        rootNodeId:
+          type: string
+        nodes:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - depth
+              - kind
+              - actionType
+              - functionName
+              - selector
+              - warnings
+              - evidence
+            properties:
+              id:
+                type: string
+              parentId:
+                type: string
+              depth:
+                type: integer
+                minimum: 0
+              kind:
+                enum:
+                  - root
+                  - nested_call
+                  - multicall_child
+                  - user_operation_hint
+              actionType:
+                type: string
+              functionName:
+                type: string
+              selector:
+                $ref: "#/components/schemas/Hex"
+              evidence:
+                type: array
+                items:
+                  type: string
+              warnings:
+                type: array
+                items:
+                  type: string
+        edges:
+          type: array
+          items:
+            type: object
+            required:
+              - from
+              - to
+              - relationship
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              relationship:
+                enum:
+                  - contains
+                  - approves
+                  - transfers
+                  - delegates
+                  - executes
+                  - unknown
+        maxDepth:
+          type: integer
+          minimum: 0
+        hasNestedExecution:
+          type: boolean
+        hasUnknownNode:
+          type: boolean

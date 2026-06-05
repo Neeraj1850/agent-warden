@@ -2,6 +2,7 @@
 import { decodeCalldata } from "./calldata-decoder.js";
 import { inferStaticBalanceDeltas } from "./balance-delta-analyzer.js";
 import { detectTransactionEnvelope } from "./envelope-detector.js";
+import { buildExecutionGraph } from "./execution-graph.js";
 import { buildReportNarrative } from "./report-narrative.js";
 import { buildRiskVector } from "./risk-scorer.js";
 import { evaluatePolicies } from "../policy/policy-engine.js";
@@ -68,6 +69,7 @@ function buildSecurityReport(
 ): SecurityReport {
   const transactionEnvelope = detectTransactionEnvelope(request.transaction);
   const assetDeltas = inferStaticBalanceDeltas(request.transaction, decodedTransaction);
+  const executionGraph = buildExecutionGraph(request.transaction, decodedTransaction);
   const policyDecision = evaluatePolicies(
     request.intent,
     request.transaction,
@@ -107,6 +109,7 @@ function buildSecurityReport(
     ...narrative,
     transactionEnvelope,
     actionType,
+    executionGraph,
     decodedActions: decodedTransaction.decodedActions ?? [],
     assetDeltas,
     approvalFindings,

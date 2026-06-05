@@ -17,6 +17,7 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - deterministic risk score
 - transaction envelope classification
 - normalized action type
+- execution graph for root and nested call evidence
 - decoded actions
 - approval findings
 - static asset deltas
@@ -41,6 +42,7 @@ AgentWarden V1 analyzes the agent-common EVM transaction surface:
 - ERC-1155 transfers, batch transfers, and `setApprovalForAll`
 - common router swap selectors
 - common multicall selectors with static nested selector scans
+- execution graph construction for root actions and detected nested actions
 - EIP-7702 authorization-list detection
 
 Set `ANALYSIS_RPC_URL` to enable optional free RPC `eth_call` success/failure simulation.

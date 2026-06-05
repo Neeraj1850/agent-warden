@@ -5,6 +5,7 @@ export * from "./types/transaction.types.js";
 export * from "./analyzer/analyze-transaction.js";
 export * from "./analyzer/calldata-decoder.js";
 export * from "./analyzer/envelope-detector.js";
+export * from "./analyzer/execution-graph.js";
 export * from "./analyzer/dynamic-abi-decoder.js";
 export * from "./analyzer/approval-detector.js";
 export * from "./analyzer/intent-matcher.js";

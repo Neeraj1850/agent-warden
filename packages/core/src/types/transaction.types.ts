@@ -87,6 +87,56 @@ export interface DecodedAction {
   warnings: string[];
 }
 
+export type ExecutionGraphNodeKind =
+  | "root"
+  | "nested_call"
+  | "multicall_child"
+  | "user_operation_hint";
+
+export interface ExecutionGraphNode {
+  id: string;
+  parentId?: string;
+  depth: number;
+  kind: ExecutionGraphNodeKind;
+  actionType: ActionType;
+  functionName: DecodedFunctionName;
+  selector: Hex;
+  contractAddress?: Address;
+  tokenAddress?: Address;
+  assetStandard?: "native" | "erc20" | "erc721" | "erc1155" | "unknown";
+  from?: Address;
+  recipient?: Address;
+  spender?: Address;
+  operator?: Address;
+  approved?: boolean;
+  amount?: string;
+  tokenId?: string;
+  tokenIds?: string[];
+  warnings: string[];
+  evidence: string[];
+}
+
+export interface ExecutionGraphEdge {
+  from: string;
+  to: string;
+  relationship:
+    | "contains"
+    | "approves"
+    | "transfers"
+    | "delegates"
+    | "executes"
+    | "unknown";
+}
+
+export interface ExecutionGraph {
+  rootNodeId: string;
+  nodes: ExecutionGraphNode[];
+  edges: ExecutionGraphEdge[];
+  maxDepth: number;
+  hasNestedExecution: boolean;
+  hasUnknownNode: boolean;
+}
+
 export interface DecodedTransaction {
   functionName: DecodedFunctionName;
   actionType?: ActionType;

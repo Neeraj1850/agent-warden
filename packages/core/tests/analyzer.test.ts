@@ -24,6 +24,11 @@ describe("analyzeTransaction", () => {
     assert.equal(report.decodedTransaction.functionName, "erc20.transfer");
     assert.equal(report.actionType, "erc20_transfer");
     assert.equal(report.decodedActions[0]?.assetStandard, "erc20");
+    assert.equal(report.executionGraph.rootNodeId, "node-0");
+    assert.equal(report.executionGraph.nodes.length, 1);
+    assert.equal(report.executionGraph.nodes[0]?.actionType, "erc20_transfer");
+    assert.equal(report.executionGraph.nodes[0]?.recipient, RECIPIENT);
+    assert.equal(report.executionGraph.hasNestedExecution, false);
     assert.equal(report.policyViolations.length, 0);
     assert.match(report.summary, /^ALLOW: erc20 transfer/);
     assert.equal(report.findings.length, 0);
@@ -267,6 +272,11 @@ describe("analyzeTransaction", () => {
 
     assert.equal(report.verdict, "BLOCK");
     assert.equal(report.actionType, "multicall");
+    assert.equal(report.executionGraph.nodes.length, 2);
+    assert.equal(report.executionGraph.maxDepth, 1);
+    assert.equal(report.executionGraph.hasNestedExecution, true);
+    assert.equal(report.executionGraph.edges[0]?.relationship, "approves");
+    assert.equal(report.executionGraph.nodes[1]?.kind, "multicall_child");
     assert.ok(
       report.policyViolations.some(
         (violation) => violation.code === "SUSPICIOUS_MULTICALL"
@@ -351,6 +361,7 @@ describe("analyzeTransaction", () => {
 
     assert.equal(report.verdict, "BLOCK");
     assert.equal(report.actionType, "account_abstraction");
+    assert.equal(report.executionGraph.nodes[1]?.kind, "user_operation_hint");
     assert.ok(
       report.policyViolations.some(
         (violation) => violation.code === "EIP4337_USEROP_REQUIRES_RECURSIVE_REVIEW"
@@ -365,6 +376,10 @@ describe("analyzeTransaction", () => {
     assert.equal(
       analyzeTransaction(request).reportHash,
       analyzeTransaction(request).reportHash
+    );
+    assert.deepEqual(
+      analyzeTransaction(request).executionGraph,
+      analyzeTransaction(request).executionGraph
     );
   });
 

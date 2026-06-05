@@ -41,6 +41,7 @@ The V1 response also includes:
 - `transactionEnvelope`
 - `actionType`
 - `riskVector`
+- `executionGraph`
 - `decodedActions`
 - `assetDeltas`
 - `approvalFindings`

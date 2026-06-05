@@ -5,6 +5,7 @@ import type {
   ApprovalFinding,
   DecodedAction,
   DecodedTransaction,
+  ExecutionGraph,
   TokenBalanceDelta,
   TransactionEnvelope,
   UnsignedEvmTransaction
@@ -54,6 +55,7 @@ export interface SecurityReport {
   recommendedAction: string;
   transactionEnvelope: TransactionEnvelope;
   actionType: ActionType;
+  executionGraph: ExecutionGraph;
   decodedActions: DecodedAction[];
   assetDeltas: TokenBalanceDelta[];
   approvalFindings: ApprovalFinding[];
