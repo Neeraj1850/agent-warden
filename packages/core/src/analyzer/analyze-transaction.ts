@@ -6,6 +6,8 @@ import { buildExecutionGraph } from "./execution-graph.js";
 import { buildReportNarrative } from "./report-narrative.js";
 import { buildRiskVector, decideVerdict, scoreRisk } from "./risk-scorer.js";
 import { evaluatePolicies } from "../policy/policy-engine.js";
+import { evaluateProfilePolicies } from "../policy/profile-policy.js";
+import { resolvePolicyProfile } from "../policy/profile-registry.js";
 import type { PolicyViolation } from "../types/policy.types.js";
 import type {
   AnalysisRequest,
@@ -136,6 +138,8 @@ export function applyAdditionalPolicyViolations(
     reportHash: hashObject({
       intent: normalizedRequest.intent,
       transaction: normalizedRequest.transaction,
+      profileId: normalizedRequest.profileId,
+      policyProfile: normalizedRequest.policyProfile,
       report: canonicalReport
     })
   };
@@ -149,6 +153,12 @@ function buildSecurityReport(
   const transactionEnvelope = detectTransactionEnvelope(request.transaction);
   const assetDeltas = inferStaticBalanceDeltas(request.transaction, decodedTransaction);
   const executionGraph = buildExecutionGraph(request.transaction, decodedTransaction);
+  const simulationResult: SimulationResult = {
+    ...simulationOverride,
+    balanceDeltas: simulationOverride.balanceDeltas.length
+      ? simulationOverride.balanceDeltas
+      : assetDeltas
+  };
   const policyDecision = evaluatePolicies(
     request.intent,
     request.transaction,
@@ -160,18 +170,21 @@ function buildSecurityReport(
     request.transaction,
     simulationOverride
   );
+  const policyProfile = resolvePolicyProfile(request.profileId, request.policyProfile);
+  const profileViolations = evaluateProfilePolicies({
+    profile: policyProfile,
+    intent: request.intent,
+    transaction: request.transaction,
+    decoded: decodedTransaction,
+    simulationResult
+  });
   const policyViolations = dedupePolicyViolations([
     ...policyDecision.violations,
-    ...simulationViolations
+    ...simulationViolations,
+    ...profileViolations
   ]);
   const verdict = decideVerdict(policyViolations);
   const riskScore = scoreRisk(decodedTransaction, policyViolations);
-  const simulationResult: SimulationResult = {
-    ...simulationOverride,
-    balanceDeltas: simulationOverride.balanceDeltas.length
-      ? simulationOverride.balanceDeltas
-      : assetDeltas
-  };
   const approvalFindings = collectApprovalFindings(
     request.transaction,
     decodedTransaction
@@ -211,6 +224,8 @@ function buildSecurityReport(
     reportHash: hashObject({
       intent: request.intent,
       transaction: request.transaction,
+      profileId: request.profileId,
+      policyProfile: request.policyProfile,
       report: reportWithoutHash
     })
   };

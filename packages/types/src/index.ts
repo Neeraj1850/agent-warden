@@ -19,6 +19,11 @@ export type {
 } from "@agent-warden/core";
 export type { PolicyDecision, PolicyViolation, Verdict } from "@agent-warden/core";
 export type {
+  PolicyProfile,
+  PolicyProfileMode,
+  PolicyProfileTokenLimit
+} from "@agent-warden/core";
+export type {
   ActionType,
   Address,
   ApprovalFinding,

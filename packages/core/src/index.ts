@@ -1,4 +1,5 @@
 export * from "./types/intent.types.js";
+export * from "./types/policy-profile.types.js";
 export * from "./types/policy.types.js";
 export * from "./types/report.types.js";
 export * from "./types/signature.types.js";
@@ -22,6 +23,8 @@ export * from "./intelligence/goplus-client.js";
 export * from "./intelligence/address-policy.js";
 export * from "./policy/default-policies.js";
 export * from "./policy/policy-engine.js";
+export * from "./policy/profile-policy.js";
+export * from "./policy/profile-registry.js";
 export * from "./simulation/simulator.interface.js";
 export * from "./simulation/anvil-simulator.js";
 export * from "./simulation/eth-call-simulator.js";

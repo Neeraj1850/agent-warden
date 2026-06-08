@@ -27,6 +27,7 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - policy violations
 - static or optional `eth_call` simulation summary
 - observed outcome mismatches when simulation evidence is available
+- optional agent policy profile findings
 - state-aware findings when RPC state is configured
 - safer alternative
 - report hash
@@ -82,6 +83,26 @@ Outcome mismatches such as `UNEXPECTED_RECIPIENT`,
 `APPROVAL_NOT_IN_INTENT`, `UNEXPECTED_LOG_EVENT`, and
 `OUTCOME_EXCEEDS_INTENT` raise the final verdict without weakening any earlier
 policy decision.
+
+## Agent Policy Profiles
+
+Requests may provide `profileId` or an inline `policyProfile`. If neither is
+present, AgentWarden uses the default balanced profile and preserves existing
+behavior.
+
+Policy profiles are deterministic guardrails for agent/app/wallet classes. V1
+ships a local registry with `default`, `strict-treasury`, `testnet-developer`,
+`payment`, and `trading`. Profiles can constrain chains, intent actions,
+recipients, tokens, spenders, operators, routers, native/token limits,
+approvals, operator approvals, deployments, unknown contract calls, simulation
+requirements, and explicit expected-outcome requirements.
+
+Profile checks run after decode and simulation evidence are available:
+
+`intent -> decode -> profile selection -> state snapshot -> simulation -> observed outcome comparison -> profile policy -> verdict`
+
+Profile findings can raise `ALLOW` to `WARN` or `BLOCK`, but cannot downgrade
+an existing deterministic block.
 
 ## State-Aware Analysis
 

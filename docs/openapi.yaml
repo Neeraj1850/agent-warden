@@ -123,6 +123,10 @@ components:
       properties:
         requestId:
           type: string
+        profileId:
+          type: string
+        policyProfile:
+          $ref: "#/components/schemas/PolicyProfile"
         intent:
           $ref: "#/components/schemas/TransactionIntent"
         transaction:
@@ -359,6 +363,93 @@ components:
         approved:
           type: boolean
     ExpectedTokenAmountLimit:
+      type: object
+      required:
+        - tokenAddress
+        - maxAmount
+      properties:
+        tokenAddress:
+          $ref: "#/components/schemas/Address"
+        maxAmount:
+          $ref: "#/components/schemas/DecimalString"
+    PolicyProfile:
+      type: object
+      required:
+        - profileId
+        - name
+        - mode
+      properties:
+        profileId:
+          type: string
+        name:
+          type: string
+        mode:
+          enum:
+            - strict
+            - balanced
+            - permissive-testnet
+        allowedChains:
+          type: array
+          items:
+            type: integer
+            minimum: 1
+        allowedActions:
+          type: array
+          items:
+            enum:
+              - transfer
+              - approve
+              - contract_call
+              - native_transfer
+              - token_transfer
+              - approval
+              - nft_transfer
+              - swap
+              - multicall
+              - deployment
+        allowedRecipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        allowedTokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        allowedSpenders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        allowedOperators:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        allowedRouters:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        maxNativeValue:
+          $ref: "#/components/schemas/DecimalString"
+        maxTokenAmounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PolicyProfileTokenLimit"
+        blockApprovals:
+          type: boolean
+        blockOperatorApprovals:
+          type: boolean
+        blockContractDeployments:
+          type: boolean
+        blockUnknownContracts:
+          type: boolean
+        requireSimulation:
+          type: boolean
+        requireExpectedOutcome:
+          type: boolean
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    PolicyProfileTokenLimit:
       type: object
       required:
         - tokenAddress

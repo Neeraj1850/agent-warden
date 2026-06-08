@@ -1,4 +1,5 @@
 import type { TransactionIntent } from "./intent.types.js";
+import type { PolicyProfile } from "./policy-profile.types.js";
 import type { PolicyViolation, Verdict } from "./policy.types.js";
 import type { ChainStateSnapshot } from "./state.types.js";
 import type {
@@ -18,6 +19,8 @@ export interface AnalysisRequest {
   intent: TransactionIntent;
   transaction: UnsignedEvmTransaction;
   requestId?: string;
+  profileId?: string;
+  policyProfile?: PolicyProfile;
 }
 
 export type SimulationStatus = "not_run" | "success" | "failed" | "unavailable";

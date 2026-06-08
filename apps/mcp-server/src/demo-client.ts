@@ -4,6 +4,7 @@ import type {
   AnalysisRequest,
   Address,
   ExplainReportResponse,
+  PolicyProfile,
   SecurityReport,
   Verdict
 } from "@agent-warden/types";
@@ -11,11 +12,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeTransactionToolName } from "./tools/analyze-transaction.tool.js";
 import { explainReportToolName } from "./tools/explain-report.tool.js";
+import { getPolicyProfileToolName } from "./tools/get-policy-profile.tool.js";
+import { listPolicyProfilesToolName } from "./tools/list-policy-profiles.tool.js";
 
 const CHAIN_ID = 11155111;
 const FROM = "0x1111111111111111111111111111111111111111" as Address;
 const TOKEN = "0x2222222222222222222222222222222222222222" as Address;
 const RECIPIENT = "0x3333333333333333333333333333333333333333" as Address;
+const OTHER_RECIPIENT = "0x4444444444444444444444444444444444444444" as Address;
 const SPENDER = "0x5555555555555555555555555555555555555555" as Address;
 const MAX_UINT256 = (1n << 256n) - 1n;
 
@@ -56,6 +60,16 @@ try {
     throw new Error(`Missing MCP tool: ${explainReportToolName}`);
   }
 
+  if (!toolNames.includes(listPolicyProfilesToolName)) {
+    throw new Error(`Missing MCP tool: ${listPolicyProfilesToolName}`);
+  }
+
+  if (!toolNames.includes(getPolicyProfileToolName)) {
+    throw new Error(`Missing MCP tool: ${getPolicyProfileToolName}`);
+  }
+
+  await verifyPolicyProfileTools();
+
   await runScenario({
     label: "safe-transfer",
     expectedVerdict: "ALLOW",
@@ -66,10 +80,39 @@ try {
     expectedVerdict: "BLOCK",
     request: maliciousApprovalRequest()
   });
+  await runScenario({
+    label: "profile-blocked-recipient",
+    expectedVerdict: "BLOCK",
+    request: profileBlockedRecipientRequest()
+  });
 
-  console.log("[mcp-client] complete scenarios=2 failures=0");
+  console.log("[mcp-client] complete scenarios=3 failures=0");
 } finally {
   await client.close();
+}
+
+async function verifyPolicyProfileTools(): Promise<void> {
+  const listResult = await client.callTool({
+    name: listPolicyProfilesToolName,
+    arguments: {}
+  });
+  const listText = extractTextContent(listResult, "MCP profile list tool");
+  const profiles = JSON.parse(listText) as { profiles: Array<{ profileId: string }> };
+
+  if (!profiles.profiles.some((profile) => profile.profileId === "payment")) {
+    throw new Error("MCP profile list did not include payment profile.");
+  }
+
+  const getResult = await client.callTool({
+    name: getPolicyProfileToolName,
+    arguments: { profileId: "payment" }
+  });
+  const getText = extractTextContent(getResult, "MCP profile get tool");
+  const profile = JSON.parse(getText) as { profile?: { profileId: string } };
+
+  if (profile.profile?.profileId !== "payment") {
+    throw new Error("MCP get_policy_profile did not return payment profile.");
+  }
 }
 
 async function runScenario(input: {
@@ -105,16 +148,9 @@ async function callExplainReport(report: SecurityReport): Promise<ExplainReportR
     arguments: { report } as unknown as Record<string, unknown>
   });
 
-  if (!("content" in result) || !Array.isArray(result.content)) {
-    throw new Error("MCP explain tool returned an unsupported result shape.");
-  }
-
-  const textContent = result.content.find(isTextContent);
-  if (!textContent) {
-    throw new Error("MCP explain tool did not return a text JSON response.");
-  }
-
-  const explanation = JSON.parse(textContent.text) as ExplainReportResponse;
+  const explanation = JSON.parse(
+    extractTextContent(result, "MCP explain tool")
+  ) as ExplainReportResponse;
 
   if (
     explanation.verdict !== report.verdict ||
@@ -133,16 +169,25 @@ async function callAnalyzeTransaction(request: AnalysisRequest): Promise<Securit
     arguments: request as unknown as Record<string, unknown>
   });
 
-  if (!("content" in result) || !Array.isArray(result.content)) {
-    throw new Error("MCP tool returned an unsupported result shape.");
+  return JSON.parse(extractTextContent(result, "MCP analyze tool")) as SecurityReport;
+}
+
+function extractTextContent(result: unknown, label: string): string {
+  if (
+    !result ||
+    typeof result !== "object" ||
+    !("content" in result) ||
+    !Array.isArray(result.content)
+  ) {
+    throw new Error(`${label} returned an unsupported result shape.`);
   }
 
   const textContent = result.content.find(isTextContent);
   if (!textContent) {
-    throw new Error("MCP tool did not return a text JSON report.");
+    throw new Error(`${label} did not return a text JSON response.`);
   }
 
-  return JSON.parse(textContent.text) as SecurityReport;
+  return textContent.text;
 }
 
 function isTextContent(content: unknown): content is { type: "text"; text: string } {
@@ -197,6 +242,59 @@ function maliciousApprovalRequest(): AnalysisRequest {
       value: "0",
       data: encodeErc20Approve(SPENDER, MAX_UINT256)
     }
+  };
+}
+
+function profileBlockedRecipientRequest(): AnalysisRequest {
+  return {
+    requestId: "mcp-demo-profile-blocked-recipient",
+    policyProfile: paymentProfile(),
+    intent: {
+      action: "token_transfer",
+      chainId: CHAIN_ID,
+      from: FROM,
+      tokenAddress: TOKEN,
+      recipient: OTHER_RECIPIENT,
+      amount: "1000000",
+      expectedOutcome: {
+        recipients: [OTHER_RECIPIENT],
+        tokenOutflows: [
+          {
+            assetStandard: "erc20",
+            tokenAddress: TOKEN,
+            recipient: OTHER_RECIPIENT,
+            amount: "1000000"
+          }
+        ],
+        allowUnknownLogs: false
+      },
+      description: "MCP demo: profile blocks non-allowlisted ERC-20 recipient."
+    },
+    transaction: {
+      chainId: CHAIN_ID,
+      from: FROM,
+      to: TOKEN,
+      value: "0",
+      data: encodeErc20Transfer(OTHER_RECIPIENT, 1_000_000n)
+    }
+  };
+}
+
+function paymentProfile(): PolicyProfile {
+  return {
+    profileId: "mcp-payment-demo",
+    name: "MCP Payment Demo",
+    mode: "strict",
+    allowedChains: [CHAIN_ID],
+    allowedActions: ["token_transfer"],
+    allowedRecipients: [RECIPIENT],
+    allowedTokens: [TOKEN],
+    maxTokenAmounts: [{ tokenAddress: TOKEN, maxAmount: "2000000" }],
+    blockApprovals: true,
+    blockOperatorApprovals: true,
+    blockContractDeployments: true,
+    blockUnknownContracts: true,
+    requireExpectedOutcome: true
   };
 }
 

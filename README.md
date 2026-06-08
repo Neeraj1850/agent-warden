@@ -35,12 +35,17 @@ LLMs may explain results later, but the deterministic policy engine is always th
 flowchart LR
   Agent["External AI Agent"] --> Transport["API or MCP"]
   Transport --> Analyzer["Deterministic Analyzer"]
+  Analyzer --> Profiles["Agent Policy Profiles"]
   Analyzer --> Decoder["Calldata and Envelope Decoder"]
+  Analyzer --> State["Optional State Snapshot"]
   Analyzer --> Policy["Policy Engine"]
-  Analyzer --> Simulation["Optional eth_call Simulation"]
+  Analyzer --> Simulation["Optional eth_call or Anvil Simulation"]
+  Simulation --> Outcome["Observed Outcome Check"]
   Decoder --> Report["Security Report"]
+  Profiles --> Report
+  State --> Report
   Policy --> Report
-  Simulation --> Report
+  Outcome --> Report
   Report --> Decision["ALLOW / WARN / BLOCK"]
   Report --> Hash["Deterministic Report Hash"]
   Hash -. future .-> Arc["Arc Attestation"]
@@ -78,11 +83,39 @@ This repository uses pnpm workspaces.
 ```bash
 pnpm install
 pnpm test
+pnpm demo:mvp
 pnpm lint
 pnpm dev
 ```
 
 The current MVP does not require paid APIs or external services.
+
+### Run MVP Demo
+
+The fastest local proof is:
+
+```bash
+pnpm demo:mvp
+```
+
+It runs deterministic offline scenarios for:
+
+- allowlisted payment transfer
+- blocked non-allowlisted payment recipient
+- blocked treasury approval
+- allowed trading router swap with mocked simulation
+- blocked unknown trading router
+
+Expected output shape:
+
+```text
+[mvp-demo] AgentWarden deterministic MVP flow
+[PASS] payment-allowlisted-transfer expected=ALLOW actual=ALLOW risk=5 action=erc20_transfer
+       violations=none
+       recommendedAction=...
+       hash=0x...
+[mvp-demo] complete total=5 failures=0
+```
 
 Machine-readable API contract: [`docs/openapi.yaml`](docs/openapi.yaml).
 

@@ -15,6 +15,7 @@ Analyzes an unsigned EVM transaction.
 ```json
 {
   "requestId": "demo-1",
+  "profileId": "payment",
   "intent": {
     "action": "transfer",
     "chainId": 5042002,
@@ -43,6 +44,12 @@ Analyzes an unsigned EVM transaction.
   }
 }
 ```
+
+`profileId` is optional. If omitted, AgentWarden uses the default balanced
+profile. A request may also include an inline `policyProfile` object for
+agent-specific guardrails such as allowed chains, actions, recipients, tokens,
+spenders, operators, routers, value limits, required simulation, and required
+expected outcomes.
 
 ### Response
 
@@ -77,6 +84,9 @@ Anvil fork for execution evidence.
 checked against declared recipients, token/NFT outflows, approvals, spenders,
 operators, native/token limits, and unknown-log policy before the deterministic
 verdict is finalized.
+
+Built-in V1 profiles include `default`, `strict-treasury`,
+`testnet-developer`, `payment`, and `trading`.
 
 ## `POST /analyze-signature`
 

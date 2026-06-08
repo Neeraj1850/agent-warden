@@ -11,6 +11,11 @@ import type {
   ExpectedTransactionOutcome,
   IntentAction
 } from "../types/intent.types.js";
+import type {
+  PolicyProfile,
+  PolicyProfileMode,
+  PolicyProfileTokenLimit
+} from "../types/policy-profile.types.js";
 import type { Verdict } from "../types/policy.types.js";
 import type { Address, Hex, UnsignedEvmTransaction } from "../types/transaction.types.js";
 
@@ -19,6 +24,11 @@ const HEX_PATTERN = /^0x([a-fA-F0-9]{2})*$/;
 const DECIMAL_PATTERN = /^\d+$/;
 const REPORT_HASH_PATTERN = /^0x[a-f0-9]{64}$/;
 const VERDICTS = new Set<Verdict>(["ALLOW", "WARN", "BLOCK"]);
+const POLICY_PROFILE_MODES = new Set<PolicyProfileMode>([
+  "strict",
+  "balanced",
+  "permissive-testnet"
+]);
 const INTENT_ACTIONS = new Set<IntentAction>([
   "transfer",
   "approve",
@@ -118,6 +128,8 @@ export function validateAnalysisRequest(input: unknown): AnalysisRequest {
 
   return {
     requestId: optionalString(request.requestId, "requestId"),
+    profileId: optionalString(request.profileId, "profileId"),
+    policyProfile: optionalPolicyProfile(request.policyProfile, "policyProfile"),
     intent: {
       intentId: optionalString(intent.intentId, "intent.intentId"),
       action,
@@ -309,6 +321,15 @@ function optionalDecimal(value: unknown, field: string): string | undefined {
   return decimal;
 }
 
+function requiredDecimal(value: unknown, field: string): string {
+  const decimal = optionalDecimal(value, field);
+  if (decimal === undefined) {
+    throw new Error(`Expected ${field} to be a decimal integer`);
+  }
+
+  return decimal;
+}
+
 function optionalBoolean(value: unknown, field: string): boolean | undefined {
   if (value === undefined) {
     return undefined;
@@ -360,6 +381,156 @@ function optionalHexArray(value: unknown, field: string): Hex[] | undefined {
   return value.map((item, index) =>
     normalizeHexData(expectString(item, `${field}[${index}]`))
   );
+}
+
+function optionalPolicyProfile(value: unknown, field: string): PolicyProfile | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const profile = expectObject(value, field);
+  const mode = expectString(profile.mode, `${field}.mode`) as PolicyProfileMode;
+
+  if (!POLICY_PROFILE_MODES.has(mode)) {
+    throw new Error(`Unsupported ${field}.mode: ${mode}`);
+  }
+
+  return {
+    profileId: expectString(profile.profileId, `${field}.profileId`),
+    name: expectString(profile.name, `${field}.name`),
+    mode,
+    allowedChains: optionalPositiveIntegerArray(
+      profile.allowedChains,
+      `${field}.allowedChains`
+    ),
+    allowedActions: optionalIntentActionArray(
+      profile.allowedActions,
+      `${field}.allowedActions`
+    ),
+    allowedRecipients: optionalAddressArray(
+      profile.allowedRecipients,
+      `${field}.allowedRecipients`
+    ),
+    allowedTokens: optionalAddressArray(profile.allowedTokens, `${field}.allowedTokens`),
+    allowedSpenders: optionalAddressArray(
+      profile.allowedSpenders,
+      `${field}.allowedSpenders`
+    ),
+    allowedOperators: optionalAddressArray(
+      profile.allowedOperators,
+      `${field}.allowedOperators`
+    ),
+    allowedRouters: optionalAddressArray(
+      profile.allowedRouters,
+      `${field}.allowedRouters`
+    ),
+    maxNativeValue: optionalDecimal(profile.maxNativeValue, `${field}.maxNativeValue`),
+    maxTokenAmounts: optionalPolicyProfileTokenLimits(
+      profile.maxTokenAmounts,
+      `${field}.maxTokenAmounts`
+    ),
+    blockApprovals: optionalBoolean(profile.blockApprovals, `${field}.blockApprovals`),
+    blockOperatorApprovals: optionalBoolean(
+      profile.blockOperatorApprovals,
+      `${field}.blockOperatorApprovals`
+    ),
+    blockContractDeployments: optionalBoolean(
+      profile.blockContractDeployments,
+      `${field}.blockContractDeployments`
+    ),
+    blockUnknownContracts: optionalBoolean(
+      profile.blockUnknownContracts,
+      `${field}.blockUnknownContracts`
+    ),
+    requireSimulation: optionalBoolean(
+      profile.requireSimulation,
+      `${field}.requireSimulation`
+    ),
+    requireExpectedOutcome: optionalBoolean(
+      profile.requireExpectedOutcome,
+      `${field}.requireExpectedOutcome`
+    ),
+    metadata: optionalStringRecord(profile.metadata, `${field}.metadata`)
+  };
+}
+
+function optionalPositiveIntegerArray(
+  value: unknown,
+  field: string
+): number[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => expectPositiveInteger(item, `${field}[${index}]`));
+}
+
+function optionalIntentActionArray(
+  value: unknown,
+  field: string
+): IntentAction[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const action = expectString(item, `${field}[${index}]`) as IntentAction;
+    if (!INTENT_ACTIONS.has(action)) {
+      throw new Error(`Unsupported ${field}[${index}]: ${action}`);
+    }
+
+    return action;
+  });
+}
+
+function optionalPolicyProfileTokenLimits(
+  value: unknown,
+  field: string
+): PolicyProfileTokenLimit[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const limit = expectObject(item, `${field}[${index}]`);
+
+    return {
+      tokenAddress: normalizeAddress(
+        expectString(limit.tokenAddress, `${field}[${index}].tokenAddress`)
+      ),
+      maxAmount: requiredDecimal(limit.maxAmount, `${field}[${index}].maxAmount`)
+    };
+  });
+}
+
+function optionalStringRecord(
+  value: unknown,
+  field: string
+): Record<string, string> | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const record = expectObject(value, field);
+  const normalized: Record<string, string> = {};
+
+  for (const [key, item] of Object.entries(record)) {
+    normalized[key] = expectString(item, `${field}.${key}`);
+  }
+
+  return normalized;
 }
 
 function optionalExpectedOutcome(
@@ -530,7 +701,7 @@ function optionalExpectedTokenAmountLimits(
       tokenAddress: normalizeAddress(
         expectString(limit.tokenAddress, `${field}[${index}].tokenAddress`)
       ),
-      maxAmount: optionalDecimal(limit.maxAmount, `${field}[${index}].maxAmount`)!
+      maxAmount: requiredDecimal(limit.maxAmount, `${field}[${index}].maxAmount`)
     };
   });
 }

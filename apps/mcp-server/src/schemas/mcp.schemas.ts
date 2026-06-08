@@ -39,7 +39,82 @@ export const intentSchema = z.object({
   allowUnlimitedApproval: z.boolean().optional(),
   allowOperatorApproval: z.boolean().optional(),
   allowEip7702Authorization: z.boolean().optional(),
+  expectedOutcome: z
+    .object({
+      recipients: z.array(addressSchema).optional(),
+      tokenOutflows: z
+        .array(
+          z.object({
+            assetStandard: z
+              .enum(["native", "erc20", "erc721", "erc1155", "unknown"])
+              .optional(),
+            tokenAddress: addressSchema.optional(),
+            recipient: addressSchema.optional(),
+            amount: decimalSchema.optional(),
+            maxAmount: decimalSchema.optional(),
+            tokenId: decimalSchema.optional()
+          })
+        )
+        .optional(),
+      nftTransfers: z
+        .array(
+          z.object({
+            standard: z.enum(["erc721", "erc1155"]).optional(),
+            tokenAddress: addressSchema.optional(),
+            recipient: addressSchema.optional(),
+            tokenId: decimalSchema.optional(),
+            amount: decimalSchema.optional()
+          })
+        )
+        .optional(),
+      approvals: z
+        .array(
+          z.object({
+            standard: z.enum(["erc20", "erc721", "erc1155", "unknown"]).optional(),
+            tokenAddress: addressSchema.optional(),
+            spender: addressSchema.optional(),
+            operator: addressSchema.optional(),
+            amount: decimalSchema.optional(),
+            maxAmount: decimalSchema.optional(),
+            tokenId: decimalSchema.optional(),
+            approved: z.boolean().optional()
+          })
+        )
+        .optional(),
+      allowedSpenders: z.array(addressSchema).optional(),
+      allowedOperators: z.array(addressSchema).optional(),
+      maxNativeValue: decimalSchema.optional(),
+      maxTokenAmounts: z
+        .array(z.object({ tokenAddress: addressSchema, maxAmount: decimalSchema }))
+        .optional(),
+      allowUnknownLogs: z.boolean().optional()
+    })
+    .optional(),
   description: z.string().optional()
+});
+
+export const policyProfileSchema = z.object({
+  profileId: z.string(),
+  name: z.string(),
+  mode: z.enum(["strict", "balanced", "permissive-testnet"]),
+  allowedChains: z.array(z.number().int().positive()).optional(),
+  allowedActions: z.array(intentSchema.shape.action).optional(),
+  allowedRecipients: z.array(addressSchema).optional(),
+  allowedTokens: z.array(addressSchema).optional(),
+  allowedSpenders: z.array(addressSchema).optional(),
+  allowedOperators: z.array(addressSchema).optional(),
+  allowedRouters: z.array(addressSchema).optional(),
+  maxNativeValue: decimalSchema.optional(),
+  maxTokenAmounts: z
+    .array(z.object({ tokenAddress: addressSchema, maxAmount: decimalSchema }))
+    .optional(),
+  blockApprovals: z.boolean().optional(),
+  blockOperatorApprovals: z.boolean().optional(),
+  blockContractDeployments: z.boolean().optional(),
+  blockUnknownContracts: z.boolean().optional(),
+  requireSimulation: z.boolean().optional(),
+  requireExpectedOutcome: z.boolean().optional(),
+  metadata: z.record(z.string()).optional()
 });
 
 export const transactionSchema = z.object({
@@ -57,8 +132,14 @@ export const transactionSchema = z.object({
 
 export const analyzeTransactionInputSchema = {
   requestId: z.string().optional(),
+  profileId: z.string().optional(),
+  policyProfile: policyProfileSchema.optional(),
   intent: intentSchema,
   transaction: transactionSchema
+};
+
+export const getPolicyProfileInputSchema = {
+  profileId: z.string()
 };
 
 export const signatureIntentSchema = z.object({

@@ -33,6 +33,18 @@ import {
   getPolicyToolName
 } from "./tools/get-policy.tool.js";
 import {
+  executeGetPolicyProfileTool,
+  getPolicyProfileToolDescription,
+  getPolicyProfileToolInputSchema,
+  getPolicyProfileToolName
+} from "./tools/get-policy-profile.tool.js";
+import {
+  executeListPolicyProfilesTool,
+  listPolicyProfilesToolDescription,
+  listPolicyProfilesToolInputSchema,
+  listPolicyProfilesToolName
+} from "./tools/list-policy-profiles.tool.js";
+import {
   executeExplainReportTool,
   explainReportToolDescription,
   explainReportToolInputSchema,
@@ -69,6 +81,21 @@ export function createMcpServer(): McpServer {
     getPolicyToolDescription,
     getPolicyToolInputSchema,
     async () => executeGetPolicyTool()
+  );
+  server.tool(
+    listPolicyProfilesToolName,
+    listPolicyProfilesToolDescription,
+    listPolicyProfilesToolInputSchema,
+    async () => executeListPolicyProfilesTool()
+  );
+  server.tool(
+    getPolicyProfileToolName,
+    getPolicyProfileToolDescription,
+    getPolicyProfileToolInputSchema,
+    async (input) =>
+      executeGetPolicyProfileTool(
+        input as Parameters<typeof executeGetPolicyProfileTool>[0]
+      )
   );
   server.tool(
     checkAddressToolName,
@@ -112,6 +139,14 @@ if (process.argv.includes("--describe")) {
           {
             name: getPolicyToolName,
             description: getPolicyToolDescription
+          },
+          {
+            name: listPolicyProfilesToolName,
+            description: listPolicyProfilesToolDescription
+          },
+          {
+            name: getPolicyProfileToolName,
+            description: getPolicyProfileToolDescription
           },
           {
             name: checkAddressToolName,

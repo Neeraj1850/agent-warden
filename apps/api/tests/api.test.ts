@@ -383,6 +383,168 @@ describe("AgentWarden API", () => {
     }
   });
 
+  it("accepts profileId on analysis requests", async () => {
+    const { status, body } = await postAnalyzeIsolated({
+      requestId: "api-profile-id",
+      profileId: "strict-treasury",
+      intent: {
+        action: "approval",
+        chainId: 5042002,
+        from: FROM,
+        tokenAddress: TOKEN,
+        spender: SPENDER,
+        expectedOutcome: {
+          approvals: [
+            {
+              standard: "erc20",
+              tokenAddress: TOKEN,
+              spender: SPENDER,
+              maxAmount: "1"
+            }
+          ]
+        }
+      },
+      transaction: {
+        chainId: 5042002,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Approve(SPENDER, 1n)
+      }
+    });
+
+    assert.equal(status, 200);
+    assert.equal(body.verdict, "BLOCK");
+    assert.ok(hasViolation(body, "PROFILE_APPROVAL_BLOCKED"));
+  });
+
+  it("accepts inline policyProfile on analysis requests", async () => {
+    const { status, body } = await postAnalyzeIsolated({
+      requestId: "api-inline-profile",
+      policyProfile: paymentProfile(),
+      intent: {
+        action: "token_transfer",
+        chainId: 5042002,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1",
+        expectedOutcome: {
+          recipients: [RECIPIENT],
+          tokenOutflows: [
+            {
+              assetStandard: "erc20",
+              tokenAddress: TOKEN,
+              recipient: RECIPIENT,
+              amount: "1"
+            }
+          ],
+          allowUnknownLogs: false
+        }
+      },
+      transaction: {
+        chainId: 5042002,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1n)
+      }
+    });
+
+    assert.equal(status, 200);
+    assert.equal(body.verdict, "ALLOW");
+  });
+
+  it("returns 400 for malformed inline policyProfile", async () => {
+    const { status, body } = await postAnalyzeIsolated({
+      requestId: "api-bad-profile",
+      policyProfile: {
+        profileId: "bad",
+        name: "Bad",
+        mode: "reckless"
+      },
+      intent: {
+        action: "token_transfer",
+        chainId: 5042002,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1"
+      },
+      transaction: {
+        chainId: 5042002,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1n)
+      }
+    });
+
+    assert.equal(status, 400);
+    assert.equal(body.error, "Bad request");
+    assert.match(body.message, /policyProfile\.mode/);
+  });
+
+  it("blocks when inline policyProfile requires expected outcome", async () => {
+    const { status, body } = await postAnalyzeIsolated({
+      requestId: "api-profile-missing-outcome",
+      policyProfile: paymentProfile(),
+      intent: {
+        action: "token_transfer",
+        chainId: 5042002,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1"
+      },
+      transaction: {
+        chainId: 5042002,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1n)
+      }
+    });
+
+    assert.equal(status, 200);
+    assert.equal(body.verdict, "BLOCK");
+    assert.ok(hasViolation(body, "PROFILE_EXPECTED_OUTCOME_REQUIRED"));
+  });
+
+  it("changes report hash when profile changes", async () => {
+    const baseRequest = {
+      requestId: "api-profile-hash",
+      intent: {
+        action: "token_transfer",
+        chainId: 5042002,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1"
+      },
+      transaction: {
+        chainId: 5042002,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1n)
+      }
+    };
+    const withoutProfile = await postAnalyzeIsolated(baseRequest);
+    const withProfile = await postAnalyzeIsolated({
+      ...baseRequest,
+      policyProfile: {
+        profileId: "hash-only-profile",
+        name: "Hash Only Profile",
+        mode: "balanced"
+      }
+    });
+
+    assert.equal(withoutProfile.status, 200);
+    assert.equal(withProfile.status, 200);
+    assert.notEqual(withoutProfile.body.reportHash, withProfile.body.reportHash);
+  });
+
   it("blocks permit signature analysis", async () => {
     const response = await postJson(`${baseUrl}/analyze-signature`, {
       requestId: "permit",
@@ -591,6 +753,68 @@ function postJson(url: string, body: unknown): Promise<Response> {
     },
     body: JSON.stringify(body)
   });
+}
+
+async function postAnalyzeIsolated(body: unknown): Promise<{
+  status: number;
+  body: {
+    error?: string;
+    message?: string;
+    verdict?: string;
+    reportHash?: string;
+    policyViolations?: Array<{ code: string }>;
+  };
+}> {
+  const app = await createApiServer(testEnv());
+  const isolatedServer = app.listen(0);
+  await onceListening(isolatedServer);
+  const address = isolatedServer.address();
+
+  if (!address || typeof address === "string") {
+    throw new Error("Expected HTTP server address");
+  }
+
+  try {
+    const response = await postJson(`http://127.0.0.1:${address.port}/analyze`, body);
+
+    return {
+      status: response.status,
+      body: (await response.json()) as {
+        error?: string;
+        message?: string;
+        verdict?: string;
+        reportHash?: string;
+        policyViolations?: Array<{ code: string }>;
+      }
+    };
+  } finally {
+    await closeServer(isolatedServer);
+  }
+}
+
+function hasViolation(
+  report: { policyViolations?: Array<{ code: string }> },
+  code: string
+): boolean {
+  return Boolean(report.policyViolations?.some((violation) => violation.code === code));
+}
+
+function paymentProfile() {
+  return {
+    profileId: "api-payment-profile",
+    name: "API Payment Profile",
+    mode: "strict",
+    allowedChains: [5042002],
+    allowedActions: ["token_transfer"],
+    allowedRecipients: [RECIPIENT],
+    allowedTokens: [TOKEN],
+    maxTokenAmounts: [{ tokenAddress: TOKEN, maxAmount: "10" }],
+    blockApprovals: true,
+    blockOperatorApprovals: true,
+    blockContractDeployments: true,
+    blockUnknownContracts: true,
+    requireExpectedOutcome: true
+  };
 }
 
 function encodeErc20Transfer(recipient: string, amount: bigint): `0x${string}` {
