@@ -23,6 +23,7 @@ export * from "./policy/default-policies.js";
 export * from "./policy/policy-engine.js";
 export * from "./simulation/simulator.interface.js";
 export * from "./state/chain-state-provider.js";
+export * from "./state/ethers-chain-state-provider.js";
 export * from "./state/state-policy.js";
 export * from "./state/viem-chain-state-provider.js";
 export * from "./reputation/local-reputation.js";

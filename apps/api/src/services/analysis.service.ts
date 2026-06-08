@@ -2,6 +2,7 @@ import {
   applyAdditionalPolicyViolations,
   analyzeSignature,
   analyzeTransactionWithSimulation,
+  EthersChainStateProvider,
   InMemorySessionStore,
   LocalReputationProvider,
   policyViolationsFromReputationSignals,
@@ -18,7 +19,6 @@ import type {
   SignatureSecurityReport,
   ChainStateSnapshot
 } from "@agent-warden/core";
-import { ViemChainStateProvider } from "@agent-warden/core";
 import type { ApiEnv } from "../config/env.js";
 
 export interface AnalysisService {
@@ -41,13 +41,7 @@ export function createAnalysisService(
   const sessionStore = options.sessionStore ?? new InMemorySessionStore();
   const reputationProvider = options.reputationProvider ?? new LocalReputationProvider();
   const chainStateProvider =
-    options.chainStateProvider ??
-    (env.analysisRpcUrl
-      ? new ViemChainStateProvider({
-          rpcUrl: env.analysisRpcUrl,
-          timeoutMs: env.analysisRpcTimeoutMs
-        })
-      : undefined);
+    options.chainStateProvider ?? createDefaultChainStateProvider(env);
 
   return {
     async analyzeRequest(request: unknown): Promise<SecurityReport> {
@@ -90,6 +84,19 @@ export function createAnalysisService(
       return report;
     }
   };
+}
+
+export function createDefaultChainStateProvider(
+  env: Pick<ApiEnv, "analysisRpcUrl" | "analysisRpcTimeoutMs">
+): ChainStateProvider | undefined {
+  if (!env.analysisRpcUrl) {
+    return undefined;
+  }
+
+  return new EthersChainStateProvider({
+    rpcUrl: env.analysisRpcUrl,
+    timeoutMs: env.analysisRpcTimeoutMs
+  });
 }
 
 async function collectReputationViolations(

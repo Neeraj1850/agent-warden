@@ -53,8 +53,10 @@ AgentWarden V1 analyzes the agent-common EVM transaction surface:
 - optional live state snapshots for balances, target bytecode, allowances, NFT ownership, and operator approvals
 
 Set `ANALYSIS_RPC_URL` to enable optional free RPC `eth_call` success/failure simulation.
-The same variable enables state snapshots; set `ANALYSIS_RPC_TIMEOUT_MS` to tune
-the per-RPC timeout, default `3000`.
+The same variable enables state snapshots through `EthersChainStateProvider`;
+set `ANALYSIS_RPC_TIMEOUT_MS` to tune the per-RPC timeout, default `3000`.
+`ViemChainStateProvider` remains available, while viem continues to be used for
+ABI and calldata decoding.
 
 ## State-Aware Analysis
 
@@ -72,3 +74,7 @@ native balance, nonce, target bytecode, token balances, ERC-20 allowances, and
 NFT approvals. State can raise `ALLOW` to `WARN` or `BLOCK`, but it cannot
 downgrade existing deterministic policy decisions. RPC failures become
 `STATE_LOOKUP_FAILED` findings instead of API crashes.
+
+Alchemy-style enriched intelligence is intentionally deferred. It can later add
+metadata, spam NFT, portfolio, and transfer-history signals, but exact live
+pre-sign checks stay portable through standard EVM JSON-RPC reads.

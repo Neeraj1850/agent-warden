@@ -27,6 +27,7 @@
 - Permit and Permit2 detection
 - multicall analysis
 - slippage and MEV risk scoring
+- optional Alchemy-enhanced asset and spam intelligence
 
 ## Phase 4: Agentic Economy
 

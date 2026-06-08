@@ -16,6 +16,8 @@
 - Tenderly or BlockSec for simulation
 - TRM or Elliptic for compliance screening
 - Open Policy Agent for policy-as-code
-- viem or ethers for chain calls
+- ethers for default live chain-state reads
+- viem for ABI and calldata decoding
+- Alchemy SDK for optional enriched intelligence later
 - official MCP SDK for transport
 - x402 SDK for payment verification

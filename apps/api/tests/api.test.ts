@@ -3,12 +3,14 @@ import { after, before, describe, it } from "node:test";
 import type { Server } from "node:http";
 import {
   LocalReputationProvider,
+  EthersChainStateProvider,
   type AnalysisRequest,
   type ChainStateProvider,
   type ChainStateSnapshot,
   type SecurityReport
 } from "@agent-warden/core";
 import { createApiServer } from "../src/server.js";
+import { createDefaultChainStateProvider } from "../src/services/analysis.service.js";
 import type { ApiEnv } from "../src/config/env.js";
 
 const FROM = "0x1111111111111111111111111111111111111111";
@@ -284,6 +286,15 @@ describe("AgentWarden API", () => {
     } finally {
       await closeServer(isolatedServer);
     }
+  });
+
+  it("uses ethers as the default chain-state provider when RPC is configured", () => {
+    const provider = createDefaultChainStateProvider({
+      analysisRpcUrl: "http://127.0.0.1:8545",
+      analysisRpcTimeoutMs: 3_000
+    });
+
+    assert.ok(provider instanceof EthersChainStateProvider);
   });
 
   it("blocks permit signature analysis", async () => {

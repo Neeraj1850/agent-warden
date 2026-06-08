@@ -54,8 +54,9 @@ The API also applies short-lived signer session checks and configured local
 address-intelligence findings before producing the final verdict and report
 hash.
 
-Set `ANALYSIS_RPC_URL` to enable live EVM state snapshots. Optional
-`ANALYSIS_RPC_TIMEOUT_MS` defaults to `3000`.
+Set `ANALYSIS_RPC_URL` to enable live EVM state snapshots through the default
+ethers-backed JSON-RPC provider. Optional `ANALYSIS_RPC_TIMEOUT_MS` defaults to
+`3000`. Alchemy SDK is not required for the current exact pre-sign reads.
 
 ## `POST /analyze-signature`
 
