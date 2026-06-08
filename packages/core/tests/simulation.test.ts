@@ -22,6 +22,8 @@ const FROM = "0x1111111111111111111111111111111111111111" as Address;
 const TOKEN = "0x2222222222222222222222222222222222222222" as Address;
 const RECIPIENT = "0x3333333333333333333333333333333333333333" as Address;
 const SPENDER = "0x4444444444444444444444444444444444444444" as Address;
+const WRONG_RECIPIENT = "0x5555555555555555555555555555555555555555" as Address;
+const NFT = "0x6666666666666666666666666666666666666666" as Address;
 
 describe("simulation providers", () => {
   it("keeps static simulation offline", async () => {
@@ -216,7 +218,7 @@ describe("simulation policy", () => {
     );
   });
 
-  it("blocks unexpected token outflows", async () => {
+  it("blocks token outflows that exceed intent", async () => {
     const report = await analyzeTransactionWithSimulation(transferRequest(), {
       simulator: new FixedSimulator({
         status: "success",
@@ -243,12 +245,48 @@ describe("simulation policy", () => {
     assert.equal(report.verdict, "BLOCK");
     assert.ok(
       report.policyViolations.some(
-        (violation) => violation.code === "SIMULATION_UNEXPECTED_ASSET_OUTFLOW"
+        (violation) => violation.code === "OUTCOME_EXCEEDS_INTENT"
       )
     );
   });
 
-  it("blocks hidden approval events", async () => {
+  it("blocks simulated transfer to the wrong recipient", async () => {
+    const report = await analyzeTransactionWithSimulation(transferRequest(), {
+      simulator: new FixedSimulator({
+        status: "success",
+        engine: "anvil",
+        summary: "success",
+        balanceDeltas: [],
+        observedAssetDeltas: [
+          {
+            assetStandard: "erc20",
+            tokenAddress: TOKEN,
+            account: FROM,
+            delta: "-1"
+          },
+          {
+            assetStandard: "erc20",
+            tokenAddress: TOKEN,
+            account: WRONG_RECIPIENT,
+            delta: "1"
+          }
+        ]
+      })
+    });
+
+    assert.equal(report.verdict, "BLOCK");
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "UNEXPECTED_RECIPIENT"
+      )
+    );
+  });
+
+  it("blocks hidden approval events during swaps", async () => {
+    const request = transferRequest();
+    request.intent.action = "swap";
+    request.intent.recipient = undefined;
+
     const report = await analyzeTransactionWithSimulation(transferRequest(), {
       simulator: new FixedSimulator({
         status: "success",
@@ -270,9 +308,136 @@ describe("simulation policy", () => {
     assert.equal(report.verdict, "BLOCK");
     assert.ok(
       report.policyViolations.some(
-        (violation) => violation.code === "SIMULATION_UNEXPECTED_APPROVAL"
+        (violation) => violation.code === "APPROVAL_NOT_IN_INTENT"
       )
     );
+  });
+
+  it("blocks native value above the expected outcome limit", async () => {
+    const request = transferRequest();
+    request.intent.action = "native_transfer";
+    request.intent.tokenAddress = undefined;
+    request.intent.recipient = RECIPIENT;
+    request.intent.allowNativeValue = true;
+    request.intent.expectedOutcome = {
+      recipients: [RECIPIENT],
+      maxNativeValue: "1"
+    };
+    request.transaction.to = RECIPIENT;
+    request.transaction.data = "0x";
+    request.transaction.value = "2";
+
+    const report = await analyzeTransactionWithSimulation(request, {
+      simulator: new FixedSimulator({
+        status: "success",
+        engine: "anvil",
+        summary: "success",
+        balanceDeltas: [],
+        observedAssetDeltas: [
+          {
+            assetStandard: "native",
+            tokenAddress: "0x0000000000000000000000000000000000000000" as Address,
+            account: FROM,
+            delta: "-2"
+          },
+          {
+            assetStandard: "native",
+            tokenAddress: "0x0000000000000000000000000000000000000000" as Address,
+            account: RECIPIENT,
+            delta: "2"
+          }
+        ]
+      })
+    });
+
+    assert.equal(report.verdict, "BLOCK");
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "OUTCOME_EXCEEDS_INTENT"
+      )
+    );
+  });
+
+  it("blocks unexpected NFT transfers from multicall outcomes", async () => {
+    const request = transferRequest();
+    request.intent.action = "multicall";
+    request.intent.tokenAddress = undefined;
+    request.intent.recipient = undefined;
+    request.intent.amount = undefined;
+
+    const report = await analyzeTransactionWithSimulation(request, {
+      simulator: new FixedSimulator({
+        status: "success",
+        engine: "anvil",
+        summary: "success",
+        balanceDeltas: [],
+        observedAssetDeltas: [
+          {
+            assetStandard: "erc721",
+            tokenAddress: NFT,
+            account: FROM,
+            delta: "-1",
+            tokenId: "42"
+          },
+          {
+            assetStandard: "erc721",
+            tokenAddress: NFT,
+            account: WRONG_RECIPIENT,
+            delta: "1",
+            tokenId: "42"
+          }
+        ]
+      })
+    });
+
+    assert.equal(report.verdict, "BLOCK");
+    assert.ok(
+      report.policyViolations.some(
+        (violation) => violation.code === "UNEXPECTED_NFT_TRANSFER"
+      )
+    );
+  });
+
+  it("allows explicit expected outcome transfer evidence", async () => {
+    const request = transferRequest();
+    request.intent.expectedOutcome = {
+      recipients: [RECIPIENT],
+      tokenOutflows: [
+        {
+          assetStandard: "erc20",
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          amount: "1"
+        }
+      ],
+      allowUnknownLogs: false
+    };
+
+    const report = await analyzeTransactionWithSimulation(request, {
+      simulator: new FixedSimulator({
+        status: "success",
+        engine: "anvil",
+        summary: "success",
+        balanceDeltas: [],
+        observedAssetDeltas: [
+          {
+            assetStandard: "erc20",
+            tokenAddress: TOKEN,
+            account: FROM,
+            delta: "-1"
+          },
+          {
+            assetStandard: "erc20",
+            tokenAddress: TOKEN,
+            account: RECIPIENT,
+            delta: "1"
+          }
+        ]
+      })
+    });
+
+    assert.equal(report.verdict, "ALLOW");
+    assert.equal(report.policyViolations.length, 0);
   });
 
   it("allows expected transfer simulation evidence", async () => {

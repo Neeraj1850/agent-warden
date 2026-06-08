@@ -3,7 +3,14 @@ import type {
   ExplainReportRequest,
   SecurityReport
 } from "../types/report.types.js";
-import type { IntentAction } from "../types/intent.types.js";
+import type {
+  ExpectedApproval,
+  ExpectedAssetOutflow,
+  ExpectedNftTransfer,
+  ExpectedTokenAmountLimit,
+  ExpectedTransactionOutcome,
+  IntentAction
+} from "../types/intent.types.js";
 import type { Verdict } from "../types/policy.types.js";
 import type { Address, Hex, UnsignedEvmTransaction } from "../types/transaction.types.js";
 
@@ -137,6 +144,10 @@ export function validateAnalysisRequest(input: unknown): AnalysisRequest {
       allowEip7702Authorization: optionalBoolean(
         intent.allowEip7702Authorization,
         "intent.allowEip7702Authorization"
+      ),
+      expectedOutcome: optionalExpectedOutcome(
+        intent.expectedOutcome,
+        "intent.expectedOutcome"
       ),
       description: optionalDescription(intent.description, "intent.description")
     },
@@ -349,6 +360,227 @@ function optionalHexArray(value: unknown, field: string): Hex[] | undefined {
   return value.map((item, index) =>
     normalizeHexData(expectString(item, `${field}[${index}]`))
   );
+}
+
+function optionalExpectedOutcome(
+  value: unknown,
+  field: string
+): ExpectedTransactionOutcome | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const outcome = expectObject(value, field);
+
+  return {
+    recipients: optionalAddressArray(outcome.recipients, `${field}.recipients`),
+    tokenOutflows: optionalExpectedAssetOutflows(
+      outcome.tokenOutflows,
+      `${field}.tokenOutflows`
+    ),
+    nftTransfers: optionalExpectedNftTransfers(
+      outcome.nftTransfers,
+      `${field}.nftTransfers`
+    ),
+    approvals: optionalExpectedApprovals(outcome.approvals, `${field}.approvals`),
+    allowedSpenders: optionalAddressArray(
+      outcome.allowedSpenders,
+      `${field}.allowedSpenders`
+    ),
+    allowedOperators: optionalAddressArray(
+      outcome.allowedOperators,
+      `${field}.allowedOperators`
+    ),
+    maxNativeValue: optionalDecimal(outcome.maxNativeValue, `${field}.maxNativeValue`),
+    maxTokenAmounts: optionalExpectedTokenAmountLimits(
+      outcome.maxTokenAmounts,
+      `${field}.maxTokenAmounts`
+    ),
+    allowUnknownLogs: optionalBoolean(
+      outcome.allowUnknownLogs,
+      `${field}.allowUnknownLogs`
+    )
+  };
+}
+
+function optionalAddressArray(value: unknown, field: string): Address[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) =>
+    normalizeAddress(expectString(item, `${field}[${index}]`))
+  );
+}
+
+function optionalExpectedAssetOutflows(
+  value: unknown,
+  field: string
+): ExpectedAssetOutflow[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const outflow = expectObject(item, `${field}[${index}]`);
+
+    return {
+      assetStandard: optionalAssetStandard(
+        outflow.assetStandard,
+        `${field}[${index}].assetStandard`
+      ),
+      tokenAddress: optionalAddress(
+        outflow.tokenAddress,
+        `${field}[${index}].tokenAddress`
+      ),
+      recipient: optionalAddress(outflow.recipient, `${field}[${index}].recipient`),
+      amount: optionalDecimal(outflow.amount, `${field}[${index}].amount`),
+      maxAmount: optionalDecimal(outflow.maxAmount, `${field}[${index}].maxAmount`),
+      tokenId: optionalDecimal(outflow.tokenId, `${field}[${index}].tokenId`)
+    };
+  });
+}
+
+function optionalExpectedNftTransfers(
+  value: unknown,
+  field: string
+): ExpectedNftTransfer[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const transfer = expectObject(item, `${field}[${index}]`);
+
+    return {
+      standard: optionalNftStandard(transfer.standard, `${field}[${index}].standard`),
+      tokenAddress: optionalAddress(
+        transfer.tokenAddress,
+        `${field}[${index}].tokenAddress`
+      ),
+      recipient: optionalAddress(transfer.recipient, `${field}[${index}].recipient`),
+      tokenId: optionalDecimal(transfer.tokenId, `${field}[${index}].tokenId`),
+      amount: optionalDecimal(transfer.amount, `${field}[${index}].amount`)
+    };
+  });
+}
+
+function optionalExpectedApprovals(
+  value: unknown,
+  field: string
+): ExpectedApproval[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const approval = expectObject(item, `${field}[${index}]`);
+
+    return {
+      standard: optionalApprovalStandard(
+        approval.standard,
+        `${field}[${index}].standard`
+      ),
+      tokenAddress: optionalAddress(
+        approval.tokenAddress,
+        `${field}[${index}].tokenAddress`
+      ),
+      spender: optionalAddress(approval.spender, `${field}[${index}].spender`),
+      operator: optionalAddress(approval.operator, `${field}[${index}].operator`),
+      amount: optionalDecimal(approval.amount, `${field}[${index}].amount`),
+      maxAmount: optionalDecimal(approval.maxAmount, `${field}[${index}].maxAmount`),
+      tokenId: optionalDecimal(approval.tokenId, `${field}[${index}].tokenId`),
+      approved: optionalBoolean(approval.approved, `${field}[${index}].approved`)
+    };
+  });
+}
+
+function optionalExpectedTokenAmountLimits(
+  value: unknown,
+  field: string
+): ExpectedTokenAmountLimit[] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error(`Expected ${field} to be an array`);
+  }
+
+  return value.map((item, index) => {
+    const limit = expectObject(item, `${field}[${index}]`);
+
+    return {
+      tokenAddress: normalizeAddress(
+        expectString(limit.tokenAddress, `${field}[${index}].tokenAddress`)
+      ),
+      maxAmount: optionalDecimal(limit.maxAmount, `${field}[${index}].maxAmount`)!
+    };
+  });
+}
+
+function optionalAssetStandard(
+  value: unknown,
+  field: string
+): ExpectedAssetOutflow["assetStandard"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const standard = expectString(value, field);
+  if (!["native", "erc20", "erc721", "erc1155", "unknown"].includes(standard)) {
+    throw new Error(`Unsupported ${field}: ${standard}`);
+  }
+
+  return standard as ExpectedAssetOutflow["assetStandard"];
+}
+
+function optionalNftStandard(
+  value: unknown,
+  field: string
+): ExpectedNftTransfer["standard"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const standard = expectString(value, field);
+  if (!["erc721", "erc1155"].includes(standard)) {
+    throw new Error(`Unsupported ${field}: ${standard}`);
+  }
+
+  return standard as ExpectedNftTransfer["standard"];
+}
+
+function optionalApprovalStandard(
+  value: unknown,
+  field: string
+): ExpectedApproval["standard"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const standard = expectString(value, field);
+  if (!["erc20", "erc721", "erc1155", "unknown"].includes(standard)) {
+    throw new Error(`Unsupported ${field}: ${standard}`);
+  }
+
+  return standard as ExpectedApproval["standard"];
 }
 
 function hexByteLength(value: string): number {

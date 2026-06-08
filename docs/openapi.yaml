@@ -261,8 +261,113 @@ components:
           type: boolean
         allowEip7702Authorization:
           type: boolean
+        expectedOutcome:
+          $ref: "#/components/schemas/ExpectedTransactionOutcome"
         description:
           type: string
+    ExpectedTransactionOutcome:
+      type: object
+      properties:
+        recipients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        tokenOutflows:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpectedAssetOutflow"
+        nftTransfers:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpectedNftTransfer"
+        approvals:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpectedApproval"
+        allowedSpenders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        allowedOperators:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        maxNativeValue:
+          $ref: "#/components/schemas/DecimalString"
+        maxTokenAmounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpectedTokenAmountLimit"
+        allowUnknownLogs:
+          type: boolean
+    ExpectedAssetOutflow:
+      type: object
+      properties:
+        assetStandard:
+          enum:
+            - native
+            - erc20
+            - erc721
+            - erc1155
+            - unknown
+        tokenAddress:
+          $ref: "#/components/schemas/Address"
+        recipient:
+          $ref: "#/components/schemas/Address"
+        amount:
+          $ref: "#/components/schemas/DecimalString"
+        maxAmount:
+          $ref: "#/components/schemas/DecimalString"
+        tokenId:
+          $ref: "#/components/schemas/DecimalString"
+    ExpectedNftTransfer:
+      type: object
+      properties:
+        standard:
+          enum:
+            - erc721
+            - erc1155
+        tokenAddress:
+          $ref: "#/components/schemas/Address"
+        recipient:
+          $ref: "#/components/schemas/Address"
+        tokenId:
+          $ref: "#/components/schemas/DecimalString"
+        amount:
+          $ref: "#/components/schemas/DecimalString"
+    ExpectedApproval:
+      type: object
+      properties:
+        standard:
+          enum:
+            - erc20
+            - erc721
+            - erc1155
+            - unknown
+        tokenAddress:
+          $ref: "#/components/schemas/Address"
+        spender:
+          $ref: "#/components/schemas/Address"
+        operator:
+          $ref: "#/components/schemas/Address"
+        amount:
+          $ref: "#/components/schemas/DecimalString"
+        maxAmount:
+          $ref: "#/components/schemas/DecimalString"
+        tokenId:
+          $ref: "#/components/schemas/DecimalString"
+        approved:
+          type: boolean
+    ExpectedTokenAmountLimit:
+      type: object
+      required:
+        - tokenAddress
+        - maxAmount
+      properties:
+        tokenAddress:
+          $ref: "#/components/schemas/Address"
+        maxAmount:
+          $ref: "#/components/schemas/DecimalString"
     UnsignedEvmTransaction:
       type: object
       required:

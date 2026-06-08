@@ -21,7 +21,19 @@ Analyzes an unsigned EVM transaction.
     "from": "0x1111111111111111111111111111111111111111",
     "tokenAddress": "0x2222222222222222222222222222222222222222",
     "recipient": "0x3333333333333333333333333333333333333333",
-    "amount": "1000000"
+    "amount": "1000000",
+    "expectedOutcome": {
+      "recipients": ["0x3333333333333333333333333333333333333333"],
+      "tokenOutflows": [
+        {
+          "assetStandard": "erc20",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1000000"
+        }
+      ],
+      "allowUnknownLogs": false
+    }
   },
   "transaction": {
     "chainId": 5042002,
@@ -60,6 +72,11 @@ ethers-backed JSON-RPC provider. Optional `ANALYSIS_RPC_TIMEOUT_MS` defaults to
 Simulation defaults to `eth_call` when `ANALYSIS_RPC_URL` exists and `static`
 otherwise. Set `SIMULATION_MODE=anvil` and `ANVIL_RPC_URL` to use an external
 Anvil fork for execution evidence.
+
+`intent.expectedOutcome` is optional. When present, simulation evidence is
+checked against declared recipients, token/NFT outflows, approvals, spenders,
+operators, native/token limits, and unknown-log policy before the deterministic
+verdict is finalized.
 
 ## `POST /analyze-signature`
 

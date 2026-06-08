@@ -26,6 +26,7 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - decoded transaction
 - policy violations
 - static or optional `eth_call` simulation summary
+- observed outcome mismatches when simulation evidence is available
 - state-aware findings when RPC state is configured
 - safer alternative
 - report hash
@@ -68,6 +69,19 @@ Simulation evidence can raise verdicts but never downgrade them. Confirmed
 reverts, simulation chain mismatch, unexpected simulated outflows, unexpected
 simulated approvals, and fork restore failures become deterministic policy
 violations.
+
+When agents provide `intent.expectedOutcome`, AgentWarden compares simulated
+asset deltas, approval events, recipients, NFT transfers, token limits, native
+value limits, and unknown logs against that declared outcome. The deterministic
+pipeline is:
+
+`intent -> decode -> state snapshot -> simulation -> observed outcome comparison -> verdict`
+
+Outcome mismatches such as `UNEXPECTED_RECIPIENT`,
+`UNEXPECTED_TOKEN_OUTFLOW`, `UNEXPECTED_NFT_TRANSFER`,
+`APPROVAL_NOT_IN_INTENT`, `UNEXPECTED_LOG_EVENT`, and
+`OUTCOME_EXCEEDS_INTENT` raise the final verdict without weakening any earlier
+policy decision.
 
 ## State-Aware Analysis
 
