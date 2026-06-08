@@ -21,10 +21,12 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - execution graph for root and nested call evidence
 - decoded actions
 - approval findings
+- optional live chain state snapshot
 - static asset deltas
 - decoded transaction
 - policy violations
 - static or optional `eth_call` simulation summary
+- state-aware findings when RPC state is configured
 - safer alternative
 - report hash
 
@@ -48,8 +50,11 @@ AgentWarden V1 analyzes the agent-common EVM transaction surface:
 - core-only signature analysis for EIP-712 permit, Permit2-like typed data, `personal_sign`, and blind `eth_sign`
 - short-lived signer session memory for approval or permit follow-up sequences
 - deterministic local address registries for known routers, known tokens, and risky targets
+- optional live state snapshots for balances, target bytecode, allowances, NFT ownership, and operator approvals
 
 Set `ANALYSIS_RPC_URL` to enable optional free RPC `eth_call` success/failure simulation.
+The same variable enables state snapshots; set `ANALYSIS_RPC_TIMEOUT_MS` to tune
+the per-RPC timeout, default `3000`.
 
 ## State-Aware Analysis
 
@@ -61,3 +66,9 @@ when it follows a recent approval event.
 Local address intelligence contributes policy findings but cannot weaken an
 existing deterministic block. The default registry is empty and can be replaced
 through the analysis service boundary without changing the analyzer.
+
+When a chain-state provider is configured, AgentWarden snapshots the signer
+native balance, nonce, target bytecode, token balances, ERC-20 allowances, and
+NFT approvals. State can raise `ALLOW` to `WARN` or `BLOCK`, but it cannot
+downgrade existing deterministic policy decisions. RPC failures become
+`STATE_LOOKUP_FAILED` findings instead of API crashes.

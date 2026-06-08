@@ -1,7 +1,7 @@
 {
   "generatedAt": "deterministic-local-run",
   "mode": "local",
-  "total": 18,
+  "total": 23,
   "failures": 0,
   "results": [
     {
@@ -1916,6 +1916,1006 @@
         ],
         "saferAlternative": "Do not sign permit typed data unless spender, token, amount, nonce, deadline, and verifying contract are independently bounded.",
         "reportHash": "0x01dc304bcc72f44d1a3f4d7bb1e955aa6760fc0b3a926f52d39cbf329b13e300"
+      }
+    },
+    {
+      "id": "state-insufficient-erc20-balance",
+      "title": "State-aware ERC-20 transfer with insufficient balance",
+      "source": "Generic",
+      "expectedVerdict": "BLOCK",
+      "passed": true,
+      "request": {
+        "requestId": "state-insufficient-erc20-balance",
+        "intent": {
+          "action": "token_transfer",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1000000",
+          "description": "Generic benchmark: calldata is valid but state lacks funds."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0xa9059cbb000000000000000000000000333333333333333333333333333333333333333300000000000000000000000000000000000000000000000000000000000f4240"
+        }
+      },
+      "report": {
+        "requestId": "state-insufficient-erc20-balance",
+        "verdict": "BLOCK",
+        "riskScore": 85,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 5,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "BLOCK: erc20 transfer classified as high risk.",
+        "explanation": "AgentWarden decoded the transaction as erc20 transfer and found 1 issue before signing. Primary finding: Signer does not have enough token balance for this transfer.",
+        "findings": [
+          {
+            "code": "INSUFFICIENT_TOKEN_BALANCE",
+            "title": "Insufficient Token Balance",
+            "severity": "critical",
+            "detail": "Signer does not have enough token balance for this transfer.",
+            "evidence": [
+              "expected=token balance >= 1000000",
+              "actual=999999"
+            ]
+          }
+        ],
+        "recommendedAction": "Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "erc20_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1000000",
+              "warnings": [],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1000000"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "erc20_transfer",
+            "functionName": "erc20.transfer",
+            "selector": "0xa9059cbb",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "erc20",
+            "recipient": "0x3333333333333333333333333333333333333333",
+            "amount": "1000000",
+            "rawAmount": "1000000",
+            "warnings": []
+          }
+        ],
+        "assetDeltas": [
+          {
+            "assetStandard": "erc20",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "account": "0x1111111111111111111111111111111111111111",
+            "delta": "-1000000"
+          },
+          {
+            "assetStandard": "erc20",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "account": "0x3333333333333333333333333333333333333333",
+            "delta": "1000000"
+          }
+        ],
+        "approvalFindings": [],
+        "benchmarkProfile": "generic",
+        "decodedTransaction": {
+          "functionName": "erc20.transfer",
+          "actionType": "erc20_transfer",
+          "selector": "0xa9059cbb",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1000000",
+          "rawAmount": "1000000",
+          "warnings": [],
+          "decodedActions": [
+            {
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1000000",
+              "rawAmount": "1000000",
+              "warnings": []
+            }
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "INSUFFICIENT_TOKEN_BALANCE",
+            "severity": "critical",
+            "message": "Signer does not have enough token balance for this transfer.",
+            "expected": "token balance >= 1000000",
+            "actual": "999999"
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": [
+            {
+              "assetStandard": "erc20",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "account": "0x1111111111111111111111111111111111111111",
+              "delta": "-1000000"
+            },
+            {
+              "assetStandard": "erc20",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "account": "0x3333333333333333333333333333333333333333",
+              "delta": "1000000"
+            }
+          ]
+        },
+        "stateSnapshot": {
+          "chainId": 11155111,
+          "blockTag": "latest",
+          "account": {
+            "address": "0x1111111111111111111111111111111111111111",
+            "nativeBalance": "1000000000000000000",
+            "nonce": 1
+          },
+          "target": {
+            "address": "0x2222222222222222222222222222222222222222",
+            "bytecode": "0x1234",
+            "isContract": true
+          },
+          "erc20": [
+            {
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "balance": "999999"
+            }
+          ],
+          "erc721": [],
+          "erc1155": [],
+          "lookupErrors": []
+        },
+        "stateFindings": [
+          {
+            "code": "INSUFFICIENT_TOKEN_BALANCE",
+            "title": "Insufficient Token Balance",
+            "severity": "critical",
+            "detail": "Signer does not have enough token balance for this transfer.",
+            "evidence": [
+              "expected=token balance >= 1000000",
+              "actual=999999"
+            ]
+          }
+        ],
+        "reportHash": "0x2aaa9ae6b87e68d9f05cd724fd012ada3d35f61e5f2934be3b78883a04c65550"
+      }
+    },
+    {
+      "id": "state-preexisting-dangerous-allowance",
+      "title": "State-aware approval with pre-existing dangerous allowance",
+      "source": "GOAT",
+      "expectedVerdict": "BLOCK",
+      "passed": true,
+      "request": {
+        "requestId": "state-preexisting-dangerous-allowance",
+        "intent": {
+          "action": "approval",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "spender": "0x5555555555555555555555555555555555555555",
+          "maxAmount": "1000",
+          "description": "GOAT benchmark: bounded approval still hides existing dangerous allowance."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0x095ea7b3000000000000000000000000555555555555555555555555555555555555555500000000000000000000000000000000000000000000000000000000000003e8"
+        }
+      },
+      "report": {
+        "requestId": "state-preexisting-dangerous-allowance",
+        "verdict": "BLOCK",
+        "riskScore": 95,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 5,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "BLOCK: erc20 approval classified as critical risk.",
+        "explanation": "AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Signer already has a dangerous allowance for this spender.",
+        "findings": [
+          {
+            "code": "ALLOWANCE_ALREADY_DANGEROUS",
+            "title": "Allowance Already Dangerous",
+            "severity": "critical",
+            "detail": "Signer already has a dangerous allowance for this spender.",
+            "evidence": [
+              "expected=existing allowance is bounded or zero",
+              "actual=0x5555555555555555555555555555555555555555:115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            ]
+          },
+          {
+            "code": "APPROVAL_ERC20",
+            "title": "ERC20 approval",
+            "severity": "medium",
+            "detail": "ERC-20 allowance change.",
+            "evidence": [
+              "standard=erc20",
+              "token=0x2222222222222222222222222222222222222222",
+              "spender=0x5555555555555555555555555555555555555555",
+              "amount=1000"
+            ]
+          }
+        ],
+        "recommendedAction": "Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "erc20_approval",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "amount": "1000",
+              "warnings": [],
+              "evidence": [
+                "selector:0x095ea7b3",
+                "action:erc20_approval",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "spender:0x5555555555555555555555555555555555555555",
+                "amount:1000"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "erc20_approval",
+            "functionName": "erc20.approve",
+            "selector": "0x095ea7b3",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "erc20",
+            "spender": "0x5555555555555555555555555555555555555555",
+            "amount": "1000",
+            "rawAmount": "1000",
+            "warnings": []
+          }
+        ],
+        "assetDeltas": [],
+        "approvalFindings": [
+          {
+            "standard": "erc20",
+            "owner": "0x1111111111111111111111111111111111111111",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "spender": "0x5555555555555555555555555555555555555555",
+            "amount": "1000",
+            "isUnlimited": false,
+            "risk": "medium",
+            "message": "ERC-20 allowance change."
+          }
+        ],
+        "benchmarkProfile": "goat",
+        "decodedTransaction": {
+          "functionName": "erc20.approve",
+          "actionType": "erc20_approval",
+          "selector": "0x095ea7b3",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "spender": "0x5555555555555555555555555555555555555555",
+          "amount": "1000",
+          "rawAmount": "1000",
+          "warnings": [],
+          "decodedActions": [
+            {
+              "actionType": "erc20_approval",
+              "functionName": "erc20.approve",
+              "selector": "0x095ea7b3",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "amount": "1000",
+              "rawAmount": "1000",
+              "warnings": []
+            }
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "ALLOWANCE_ALREADY_DANGEROUS",
+            "severity": "critical",
+            "message": "Signer already has a dangerous allowance for this spender.",
+            "expected": "existing allowance is bounded or zero",
+            "actual": "0x5555555555555555555555555555555555555555:115792089237316195423570985008687907853269984665640564039457584007913129639935"
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": []
+        },
+        "stateSnapshot": {
+          "chainId": 11155111,
+          "blockTag": "latest",
+          "account": {
+            "address": "0x1111111111111111111111111111111111111111",
+            "nativeBalance": "1000000000000000000",
+            "nonce": 1
+          },
+          "target": {
+            "address": "0x2222222222222222222222222222222222222222",
+            "bytecode": "0x1234",
+            "isContract": true
+          },
+          "erc20": [
+            {
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "spender": "0x5555555555555555555555555555555555555555",
+              "balance": "1000000",
+              "allowance": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            }
+          ],
+          "erc721": [],
+          "erc1155": [],
+          "lookupErrors": []
+        },
+        "stateFindings": [
+          {
+            "code": "ALLOWANCE_ALREADY_DANGEROUS",
+            "title": "Allowance Already Dangerous",
+            "severity": "critical",
+            "detail": "Signer already has a dangerous allowance for this spender.",
+            "evidence": [
+              "expected=existing allowance is bounded or zero",
+              "actual=0x5555555555555555555555555555555555555555:115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            ]
+          }
+        ],
+        "reportHash": "0x3500e5d9a343536688143f503ed436017324bae570d0291cacf222a083575ca8"
+      }
+    },
+    {
+      "id": "state-fake-router-no-bytecode",
+      "title": "State-aware fake router target with no bytecode",
+      "source": "Generic",
+      "expectedVerdict": "BLOCK",
+      "passed": true,
+      "request": {
+        "requestId": "state-fake-router-no-bytecode",
+        "intent": {
+          "action": "swap",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "description": "Generic benchmark: swap target has no deployed code."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x6666666666666666666666666666666666666666",
+          "value": "0",
+          "data": "0x38ed1739"
+        }
+      },
+      "report": {
+        "requestId": "state-fake-router-no-bytecode",
+        "verdict": "BLOCK",
+        "riskScore": 100,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 45,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "BLOCK: swap classified as critical risk.",
+        "explanation": "AgentWarden decoded the transaction as swap and found 1 issue before signing. Primary finding: Transaction target has no contract bytecode for a contract action.",
+        "findings": [
+          {
+            "code": "TARGET_HAS_NO_CODE",
+            "title": "Target Has No Code",
+            "severity": "critical",
+            "detail": "Transaction target has no contract bytecode for a contract action.",
+            "evidence": [
+              "expected=contract bytecode at target",
+              "actual=0x6666666666666666666666666666666666666666"
+            ]
+          }
+        ],
+        "recommendedAction": "Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "swap",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "swap",
+              "functionName": "router.swap",
+              "selector": "0x38ed1739",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Known router swap selector router.swap"
+              ],
+              "evidence": [
+                "selector:0x38ed1739",
+                "action:swap",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x6666666666666666666666666666666666666666"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "swap",
+            "functionName": "router.swap",
+            "selector": "0x38ed1739",
+            "contractAddress": "0x6666666666666666666666666666666666666666",
+            "assetStandard": "unknown",
+            "warnings": [
+              "Known router swap selector router.swap"
+            ]
+          }
+        ],
+        "assetDeltas": [],
+        "approvalFindings": [],
+        "benchmarkProfile": "generic",
+        "decodedTransaction": {
+          "functionName": "router.swap",
+          "actionType": "swap",
+          "selector": "0x38ed1739",
+          "contractAddress": "0x6666666666666666666666666666666666666666",
+          "warnings": [
+            "Known router swap selector router.swap"
+          ],
+          "decodedActions": [
+            {
+              "actionType": "swap",
+              "functionName": "router.swap",
+              "selector": "0x38ed1739",
+              "contractAddress": "0x6666666666666666666666666666666666666666",
+              "assetStandard": "unknown",
+              "warnings": [
+                "Known router swap selector router.swap"
+              ]
+            }
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "TARGET_HAS_NO_CODE",
+            "severity": "critical",
+            "message": "Transaction target has no contract bytecode for a contract action.",
+            "expected": "contract bytecode at target",
+            "actual": "0x6666666666666666666666666666666666666666"
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": []
+        },
+        "stateSnapshot": {
+          "chainId": 11155111,
+          "blockTag": "latest",
+          "account": {
+            "address": "0x1111111111111111111111111111111111111111",
+            "nativeBalance": "1000000000000000000",
+            "nonce": 1
+          },
+          "target": {
+            "address": "0x6666666666666666666666666666666666666666",
+            "bytecode": "0x",
+            "isContract": false
+          },
+          "erc20": [],
+          "erc721": [],
+          "erc1155": [],
+          "lookupErrors": []
+        },
+        "stateFindings": [
+          {
+            "code": "TARGET_HAS_NO_CODE",
+            "title": "Target Has No Code",
+            "severity": "critical",
+            "detail": "Transaction target has no contract bytecode for a contract action.",
+            "evidence": [
+              "expected=contract bytecode at target",
+              "actual=0x6666666666666666666666666666666666666666"
+            ]
+          }
+        ],
+        "reportHash": "0xac950291debb37b350c76efeefae7632316afc89f49c27fa20bbe682608ba4d8"
+      }
+    },
+    {
+      "id": "state-native-transfer-to-contract",
+      "title": "State-aware native transfer to contract recipient",
+      "source": "AgentKit",
+      "expectedVerdict": "WARN",
+      "passed": true,
+      "request": {
+        "requestId": "state-native-transfer-to-contract",
+        "intent": {
+          "action": "native_transfer",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1",
+          "allowNativeValue": true,
+          "description": "AgentKit benchmark: native recipient is a contract."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x3333333333333333333333333333333333333333",
+          "value": "1",
+          "data": "0x"
+        }
+      },
+      "report": {
+        "requestId": "state-native-transfer-to-contract",
+        "verdict": "WARN",
+        "riskScore": 25,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 5,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "WARN: native transfer classified as low risk.",
+        "explanation": "AgentWarden decoded the transaction as native transfer and found 1 issue before signing. Primary finding: Native transfer recipient has contract bytecode.",
+        "findings": [
+          {
+            "code": "TARGET_IS_CONTRACT",
+            "title": "Target Is Contract",
+            "severity": "medium",
+            "detail": "Native transfer recipient has contract bytecode.",
+            "evidence": [
+              "expected=EOA recipient unless explicitly intended",
+              "actual=0x3333333333333333333333333333333333333333"
+            ]
+          }
+        ],
+        "recommendedAction": "Require explicit human or policy confirmation before signing this transaction.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "native_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "native_transfer",
+              "functionName": "native.transfer",
+              "selector": "0x",
+              "assetStandard": "native",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "warnings": [],
+              "evidence": [
+                "selector:0x",
+                "action:native_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "native_transfer",
+            "functionName": "native.transfer",
+            "selector": "0x",
+            "assetStandard": "native",
+            "recipient": "0x3333333333333333333333333333333333333333",
+            "amount": "1",
+            "rawAmount": "1",
+            "warnings": []
+          }
+        ],
+        "assetDeltas": [
+          {
+            "assetStandard": "native",
+            "tokenAddress": "0x0000000000000000000000000000000000000000",
+            "account": "0x1111111111111111111111111111111111111111",
+            "delta": "-1"
+          },
+          {
+            "assetStandard": "native",
+            "tokenAddress": "0x0000000000000000000000000000000000000000",
+            "account": "0x3333333333333333333333333333333333333333",
+            "delta": "1"
+          }
+        ],
+        "approvalFindings": [],
+        "benchmarkProfile": "agentkit",
+        "decodedTransaction": {
+          "functionName": "native.transfer",
+          "actionType": "native_transfer",
+          "selector": "0x",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1",
+          "rawAmount": "1",
+          "warnings": [],
+          "decodedActions": [
+            {
+              "actionType": "native_transfer",
+              "functionName": "native.transfer",
+              "selector": "0x",
+              "assetStandard": "native",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "rawAmount": "1",
+              "warnings": []
+            }
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "TARGET_IS_CONTRACT",
+            "severity": "medium",
+            "message": "Native transfer recipient has contract bytecode.",
+            "expected": "EOA recipient unless explicitly intended",
+            "actual": "0x3333333333333333333333333333333333333333"
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": [
+            {
+              "assetStandard": "native",
+              "tokenAddress": "0x0000000000000000000000000000000000000000",
+              "account": "0x1111111111111111111111111111111111111111",
+              "delta": "-1"
+            },
+            {
+              "assetStandard": "native",
+              "tokenAddress": "0x0000000000000000000000000000000000000000",
+              "account": "0x3333333333333333333333333333333333333333",
+              "delta": "1"
+            }
+          ]
+        },
+        "stateSnapshot": {
+          "chainId": 11155111,
+          "blockTag": "latest",
+          "account": {
+            "address": "0x1111111111111111111111111111111111111111",
+            "nativeBalance": "1000000000000000000",
+            "nonce": 1
+          },
+          "target": {
+            "address": "0x3333333333333333333333333333333333333333",
+            "bytecode": "0x1234",
+            "isContract": true
+          },
+          "erc20": [],
+          "erc721": [],
+          "erc1155": [],
+          "lookupErrors": []
+        },
+        "stateFindings": [
+          {
+            "code": "TARGET_IS_CONTRACT",
+            "title": "Target Is Contract",
+            "severity": "medium",
+            "detail": "Native transfer recipient has contract bytecode.",
+            "evidence": [
+              "expected=EOA recipient unless explicitly intended",
+              "actual=0x3333333333333333333333333333333333333333"
+            ]
+          }
+        ],
+        "reportHash": "0xb4edc42f88788e67851ca8e06cfb92cb0c7d41e4a992cc84be970587acd3b6ff"
+      }
+    },
+    {
+      "id": "state-lookup-failure",
+      "title": "State-aware lookup failure warning",
+      "source": "Generic",
+      "expectedVerdict": "WARN",
+      "passed": true,
+      "request": {
+        "requestId": "state-lookup-failure",
+        "intent": {
+          "action": "token_transfer",
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1",
+          "description": "Generic benchmark: RPC state lookup fails closed to warning."
+        },
+        "transaction": {
+          "chainId": 11155111,
+          "from": "0x1111111111111111111111111111111111111111",
+          "to": "0x2222222222222222222222222222222222222222",
+          "value": "0",
+          "data": "0xa9059cbb00000000000000000000000033333333333333333333333333333333333333330000000000000000000000000000000000000000000000000000000000000001"
+        }
+      },
+      "report": {
+        "requestId": "state-lookup-failure",
+        "verdict": "WARN",
+        "riskScore": 25,
+        "riskVector": {
+          "contractRisk": 5,
+          "tokenRisk": 5,
+          "behaviorRisk": 5,
+          "intentDelta": 0,
+          "sanctionsRisk": 0,
+          "simulationRisk": 0
+        },
+        "summary": "WARN: erc20 transfer classified as low risk.",
+        "explanation": "AgentWarden decoded the transaction as erc20 transfer and found 1 issue before signing. Primary finding: Live chain state lookup failed before signing.",
+        "findings": [
+          {
+            "code": "STATE_LOOKUP_FAILED",
+            "title": "State Lookup Failed",
+            "severity": "medium",
+            "detail": "Live chain state lookup failed before signing.",
+            "evidence": [
+              "expected=erc20.balanceOf succeeds",
+              "actual=0x2222222222222222222222222222222222222222: mock RPC unavailable"
+            ]
+          }
+        ],
+        "recommendedAction": "Require explicit human or policy confirmation before signing this transaction.",
+        "transactionEnvelope": {
+          "type": "legacy",
+          "hasAccessList": false,
+          "hasBlobFields": false,
+          "hasAuthorizationList": false
+        },
+        "actionType": "erc20_transfer",
+        "executionGraph": {
+          "rootNodeId": "node-0",
+          "nodes": [
+            {
+              "id": "node-0",
+              "depth": 0,
+              "kind": "root",
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "warnings": [],
+              "evidence": [
+                "selector:0xa9059cbb",
+                "action:erc20_transfer",
+                "tx.from:0x1111111111111111111111111111111111111111",
+                "contract:0x2222222222222222222222222222222222222222",
+                "recipient:0x3333333333333333333333333333333333333333",
+                "amount:1"
+              ]
+            }
+          ],
+          "edges": [],
+          "maxDepth": 0,
+          "hasNestedExecution": false,
+          "hasUnknownNode": false
+        },
+        "decodedActions": [
+          {
+            "actionType": "erc20_transfer",
+            "functionName": "erc20.transfer",
+            "selector": "0xa9059cbb",
+            "contractAddress": "0x2222222222222222222222222222222222222222",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "assetStandard": "erc20",
+            "recipient": "0x3333333333333333333333333333333333333333",
+            "amount": "1",
+            "rawAmount": "1",
+            "warnings": []
+          }
+        ],
+        "assetDeltas": [
+          {
+            "assetStandard": "erc20",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "account": "0x1111111111111111111111111111111111111111",
+            "delta": "-1"
+          },
+          {
+            "assetStandard": "erc20",
+            "tokenAddress": "0x2222222222222222222222222222222222222222",
+            "account": "0x3333333333333333333333333333333333333333",
+            "delta": "1"
+          }
+        ],
+        "approvalFindings": [],
+        "benchmarkProfile": "generic",
+        "decodedTransaction": {
+          "functionName": "erc20.transfer",
+          "actionType": "erc20_transfer",
+          "selector": "0xa9059cbb",
+          "contractAddress": "0x2222222222222222222222222222222222222222",
+          "tokenAddress": "0x2222222222222222222222222222222222222222",
+          "recipient": "0x3333333333333333333333333333333333333333",
+          "amount": "1",
+          "rawAmount": "1",
+          "warnings": [],
+          "decodedActions": [
+            {
+              "actionType": "erc20_transfer",
+              "functionName": "erc20.transfer",
+              "selector": "0xa9059cbb",
+              "contractAddress": "0x2222222222222222222222222222222222222222",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "assetStandard": "erc20",
+              "recipient": "0x3333333333333333333333333333333333333333",
+              "amount": "1",
+              "rawAmount": "1",
+              "warnings": []
+            }
+          ]
+        },
+        "policyViolations": [
+          {
+            "code": "STATE_LOOKUP_FAILED",
+            "severity": "medium",
+            "message": "Live chain state lookup failed before signing.",
+            "expected": "erc20.balanceOf succeeds",
+            "actual": "0x2222222222222222222222222222222222222222: mock RPC unavailable"
+          }
+        ],
+        "simulationResult": {
+          "status": "not_run",
+          "engine": "local-static",
+          "summary": "Static analysis only. Set ANALYSIS_RPC_URL to run eth_call simulation.",
+          "balanceDeltas": [
+            {
+              "assetStandard": "erc20",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "account": "0x1111111111111111111111111111111111111111",
+              "delta": "-1"
+            },
+            {
+              "assetStandard": "erc20",
+              "tokenAddress": "0x2222222222222222222222222222222222222222",
+              "account": "0x3333333333333333333333333333333333333333",
+              "delta": "1"
+            }
+          ]
+        },
+        "stateSnapshot": {
+          "chainId": 11155111,
+          "blockTag": "latest",
+          "account": {
+            "address": "0x1111111111111111111111111111111111111111",
+            "nativeBalance": "1000000000000000000",
+            "nonce": 1
+          },
+          "target": {
+            "address": "0x2222222222222222222222222222222222222222",
+            "bytecode": "0x1234",
+            "isContract": true
+          },
+          "erc20": [],
+          "erc721": [],
+          "erc1155": [],
+          "lookupErrors": [
+            {
+              "subject": "0x2222222222222222222222222222222222222222",
+              "operation": "erc20.balanceOf",
+              "message": "mock RPC unavailable"
+            }
+          ]
+        },
+        "stateFindings": [
+          {
+            "code": "STATE_LOOKUP_FAILED",
+            "title": "State Lookup Failed",
+            "severity": "medium",
+            "detail": "Live chain state lookup failed before signing.",
+            "evidence": [
+              "expected=erc20.balanceOf succeeds",
+              "actual=0x2222222222222222222222222222222222222222: mock RPC unavailable"
+            ]
+          }
+        ],
+        "reportHash": "0xbd2ea3b9b5667df62de6c95bd4ed2c2567f5463e046b6d366d453cedcfd83a2f"
       }
     },
     {

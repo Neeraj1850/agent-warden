@@ -1,6 +1,8 @@
 import {
   analyzeSignature,
   analyzeTransaction,
+  applyAdditionalPolicyViolations,
+  evaluateStatePolicies,
   type SecurityReport,
   type SignatureSecurityReport,
   type Verdict
@@ -50,9 +52,12 @@ if (failures > 0) {
 }
 
 function analyzeLocal(payload: DemoPayload): DemoReport {
-  return payload.kind === "signature"
-    ? analyzeSignature(payload.request as Parameters<typeof analyzeSignature>[0])
-    : analyzeTransaction(payload.request as Parameters<typeof analyzeTransaction>[0]);
+  const report =
+    payload.kind === "signature"
+      ? analyzeSignature(payload.request as Parameters<typeof analyzeSignature>[0])
+      : analyzeTransaction(payload.request as Parameters<typeof analyzeTransaction>[0]);
+
+  return applyStateSnapshot(payload, report);
 }
 
 async function analyzeViaApi(url: string, payload: DemoPayload): Promise<DemoReport> {
@@ -75,7 +80,7 @@ async function analyzeViaApi(url: string, payload: DemoPayload): Promise<DemoRep
     );
   }
 
-  return JSON.parse(responseText) as DemoReport;
+  return applyStateSnapshot(payload, JSON.parse(responseText) as DemoReport);
 }
 
 function printResult(payload: DemoPayload, report: DemoReport, passed: boolean): void {
@@ -103,6 +108,23 @@ interface PayloadRunResult {
 }
 
 type DemoReport = SecurityReport | SignatureSecurityReport;
+
+function applyStateSnapshot(payload: DemoPayload, report: DemoReport): DemoReport {
+  if (
+    payload.kind === "signature" ||
+    !payload.stateSnapshot ||
+    !isSecurityReport(report)
+  ) {
+    return report;
+  }
+
+  const request = payload.request as Parameters<typeof analyzeTransaction>[0];
+  const stateViolations = evaluateStatePolicies(request, report, payload.stateSnapshot);
+  return applyAdditionalPolicyViolations(request, report, stateViolations, {
+    stateSnapshot: payload.stateSnapshot,
+    stateViolations
+  });
+}
 
 function writeArtifacts(results: PayloadRunResult[], runMode: string): void {
   mkdirSync(resultsDir, { recursive: true });

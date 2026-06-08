@@ -6,6 +6,8 @@ export interface ApiEnv {
   x402Network: string;
   x402Price: string;
   x402FacilitatorUrl: string;
+  analysisRpcUrl?: string;
+  analysisRpcTimeoutMs: number;
 }
 
 export function getEnv(): ApiEnv {
@@ -18,6 +20,13 @@ export function getEnv(): ApiEnv {
     x402PayTo: (process.env.X402_PAY_TO ?? "") as `0x${string}` | "",
     x402Network: process.env.X402_NETWORK ?? "eip155:84532",
     x402Price: process.env.X402_PRICE ?? "$0.001",
-    x402FacilitatorUrl: process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator"
+    x402FacilitatorUrl:
+      process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
+    analysisRpcUrl: optionalEnv(process.env.ANALYSIS_RPC_URL),
+    analysisRpcTimeoutMs: Number(process.env.ANALYSIS_RPC_TIMEOUT_MS ?? 3_000)
   };
+}
+
+function optionalEnv(value: string | undefined): string | undefined {
+  return value && value.trim().length > 0 ? value : undefined;
 }

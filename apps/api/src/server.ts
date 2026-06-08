@@ -16,7 +16,7 @@ export async function createApiServer(
   analysisOptions: AnalysisServiceOptions = {}
 ): Promise<express.Express> {
   const app = express();
-  const analysisService = createAnalysisService(analysisOptions);
+  const analysisService = createAnalysisService(env, analysisOptions);
 
   app.disable("x-powered-by");
   app.use(express.json({ limit: "256kb" }));

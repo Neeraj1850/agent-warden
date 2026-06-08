@@ -2,7 +2,7 @@
 
 Generated: deterministic-local-run
 Mode: local
-Total: 18
+Total: 23
 Failures: 0
 
 | Payload | Source | Expected | Actual | Risk | Action | Result |
@@ -18,6 +18,11 @@ Failures: 0
 | eip7702-authorization-list | Generic | BLOCK | BLOCK | 85 | erc20_transfer | PASS |
 | permit-signature-approval | Generic | BLOCK | BLOCK | 100 | permit_signature | PASS |
 | typed-data-permit-drain | Generic | BLOCK | BLOCK | 100 | permit_signature | PASS |
+| state-insufficient-erc20-balance | Generic | BLOCK | BLOCK | 85 | erc20_transfer | PASS |
+| state-preexisting-dangerous-allowance | GOAT | BLOCK | BLOCK | 95 | erc20_approval | PASS |
+| state-fake-router-no-bytecode | Generic | BLOCK | BLOCK | 100 | swap | PASS |
+| state-native-transfer-to-contract | AgentKit | WARN | WARN | 25 | native_transfer | PASS |
+| state-lookup-failure | Generic | WARN | WARN | 25 | erc20_transfer | PASS |
 | typed-data-transfer-authorization | Generic | BLOCK | BLOCK | 100 | transfer_authorization_signature | PASS |
 | blind-eth-sign | Generic | BLOCK | BLOCK | 100 | unknown_signature | PASS |
 | eip4337-hidden-approval | Generic | BLOCK | BLOCK | 85 | account_abstraction | PASS |
@@ -231,6 +236,97 @@ Findings:
 - CRITICAL UNLIMITED_SIGNATURE_ALLOWANCE: Signature authorizes an unlimited token allowance. Evidence: bounded allowance, 115792089237316195423570985008687907853269984665640564039457584007913129639935.
 
 Recommended action: Do not sign permit typed data unless spender, token, amount, nonce, deadline, and verifying contract are independently bounded.
+
+## State-aware ERC-20 transfer with insufficient balance
+
+Payload: `state-insufficient-erc20-balance`
+Source: Generic
+Verdict: BLOCK
+Risk score: 85
+Action: erc20_transfer
+Report hash: `0x2aaa9ae6b87e68d9f05cd724fd012ada3d35f61e5f2934be3b78883a04c65550`
+
+Summary: BLOCK: erc20 transfer classified as high risk.
+
+AgentWarden decoded the transaction as erc20 transfer and found 1 issue before signing. Primary finding: Signer does not have enough token balance for this transfer.
+
+Findings:
+- CRITICAL INSUFFICIENT_TOKEN_BALANCE: Signer does not have enough token balance for this transfer. Evidence: expected=token balance >= 1000000, actual=999999.
+
+Recommended action: Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.
+
+## State-aware approval with pre-existing dangerous allowance
+
+Payload: `state-preexisting-dangerous-allowance`
+Source: GOAT
+Verdict: BLOCK
+Risk score: 95
+Action: erc20_approval
+Report hash: `0x3500e5d9a343536688143f503ed436017324bae570d0291cacf222a083575ca8`
+
+Summary: BLOCK: erc20 approval classified as critical risk.
+
+AgentWarden decoded the transaction as erc20 approval and found 2 issues before signing. Primary finding: Signer already has a dangerous allowance for this spender.
+
+Findings:
+- CRITICAL ALLOWANCE_ALREADY_DANGEROUS: Signer already has a dangerous allowance for this spender. Evidence: expected=existing allowance is bounded or zero, actual=0x5555555555555555555555555555555555555555:115792089237316195423570985008687907853269984665640564039457584007913129639935.
+- MEDIUM APPROVAL_ERC20: ERC-20 allowance change. Evidence: standard=erc20, token=0x2222222222222222222222222222222222222222, spender=0x5555555555555555555555555555555555555555, amount=1000.
+
+Recommended action: Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.
+
+## State-aware fake router target with no bytecode
+
+Payload: `state-fake-router-no-bytecode`
+Source: Generic
+Verdict: BLOCK
+Risk score: 100
+Action: swap
+Report hash: `0xac950291debb37b350c76efeefae7632316afc89f49c27fa20bbe682608ba4d8`
+
+Summary: BLOCK: swap classified as critical risk.
+
+AgentWarden decoded the transaction as swap and found 1 issue before signing. Primary finding: Transaction target has no contract bytecode for a contract action.
+
+Findings:
+- CRITICAL TARGET_HAS_NO_CODE: Transaction target has no contract bytecode for a contract action. Evidence: expected=contract bytecode at target, actual=0x6666666666666666666666666666666666666666.
+
+Recommended action: Do not sign this transaction. Regenerate it from trusted intent or remove the risky operation.
+
+## State-aware native transfer to contract recipient
+
+Payload: `state-native-transfer-to-contract`
+Source: AgentKit
+Verdict: WARN
+Risk score: 25
+Action: native_transfer
+Report hash: `0xb4edc42f88788e67851ca8e06cfb92cb0c7d41e4a992cc84be970587acd3b6ff`
+
+Summary: WARN: native transfer classified as low risk.
+
+AgentWarden decoded the transaction as native transfer and found 1 issue before signing. Primary finding: Native transfer recipient has contract bytecode.
+
+Findings:
+- MEDIUM TARGET_IS_CONTRACT: Native transfer recipient has contract bytecode. Evidence: expected=EOA recipient unless explicitly intended, actual=0x3333333333333333333333333333333333333333.
+
+Recommended action: Require explicit human or policy confirmation before signing this transaction.
+
+## State-aware lookup failure warning
+
+Payload: `state-lookup-failure`
+Source: Generic
+Verdict: WARN
+Risk score: 25
+Action: erc20_transfer
+Report hash: `0xbd2ea3b9b5667df62de6c95bd4ed2c2567f5463e046b6d366d453cedcfd83a2f`
+
+Summary: WARN: erc20 transfer classified as low risk.
+
+AgentWarden decoded the transaction as erc20 transfer and found 1 issue before signing. Primary finding: Live chain state lookup failed before signing.
+
+Findings:
+- MEDIUM STATE_LOOKUP_FAILED: Live chain state lookup failed before signing. Evidence: expected=erc20.balanceOf succeeds, actual=0x2222222222222222222222222222222222222222: mock RPC unavailable.
+
+Recommended action: Require explicit human or policy confirmation before signing this transaction.
 
 ## EIP-3009 transfer authorization
 

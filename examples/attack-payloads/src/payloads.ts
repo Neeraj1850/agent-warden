@@ -1,5 +1,6 @@
 import type {
   AnalysisRequest,
+  ChainStateSnapshot,
   SignatureAnalysisRequest,
   Verdict
 } from "@agent-warden/core";
@@ -13,6 +14,7 @@ export interface DemoPayload {
   kind?: "transaction" | "signature";
   expectedVerdict: Verdict;
   request: AnalysisRequest | SignatureAnalysisRequest;
+  stateSnapshot?: ChainStateSnapshot;
 }
 
 const CHAIN_ID = 11155111;
@@ -299,6 +301,172 @@ export const demoPayloads: DemoPayload[] = [
     }
   },
   {
+    id: "state-insufficient-erc20-balance",
+    title: "State-aware ERC-20 transfer with insufficient balance",
+    source: "Generic",
+    expectedVerdict: "BLOCK",
+    request: {
+      requestId: "state-insufficient-erc20-balance",
+      intent: {
+        action: "token_transfer",
+        chainId: CHAIN_ID,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1000000",
+        description: "Generic benchmark: calldata is valid but state lacks funds."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1_000_000n)
+      }
+    },
+    stateSnapshot: stateSnapshot({
+      erc20: [
+        {
+          tokenAddress: TOKEN,
+          owner: FROM,
+          balance: "999999"
+        }
+      ]
+    })
+  },
+  {
+    id: "state-preexisting-dangerous-allowance",
+    title: "State-aware approval with pre-existing dangerous allowance",
+    source: "GOAT",
+    expectedVerdict: "BLOCK",
+    request: {
+      requestId: "state-preexisting-dangerous-allowance",
+      intent: {
+        action: "approval",
+        chainId: CHAIN_ID,
+        from: FROM,
+        tokenAddress: TOKEN,
+        spender: SPENDER,
+        maxAmount: "1000",
+        description:
+          "GOAT benchmark: bounded approval still hides existing dangerous allowance."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Approve(SPENDER, 1_000n)
+      }
+    },
+    stateSnapshot: stateSnapshot({
+      erc20: [
+        {
+          tokenAddress: TOKEN,
+          owner: FROM,
+          spender: SPENDER,
+          balance: "1000000",
+          allowance: MAX_UINT256.toString()
+        }
+      ]
+    })
+  },
+  {
+    id: "state-fake-router-no-bytecode",
+    title: "State-aware fake router target with no bytecode",
+    source: "Generic",
+    expectedVerdict: "BLOCK",
+    request: {
+      requestId: "state-fake-router-no-bytecode",
+      intent: {
+        action: "swap",
+        chainId: CHAIN_ID,
+        from: FROM,
+        description: "Generic benchmark: swap target has no deployed code."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: ROUTER,
+        value: "0",
+        data: "0x38ed1739"
+      }
+    },
+    stateSnapshot: stateSnapshot({
+      target: {
+        address: ROUTER,
+        bytecode: "0x",
+        isContract: false
+      }
+    })
+  },
+  {
+    id: "state-native-transfer-to-contract",
+    title: "State-aware native transfer to contract recipient",
+    source: "AgentKit",
+    expectedVerdict: "WARN",
+    request: {
+      requestId: "state-native-transfer-to-contract",
+      intent: {
+        action: "native_transfer",
+        chainId: CHAIN_ID,
+        from: FROM,
+        recipient: RECIPIENT,
+        amount: "1",
+        allowNativeValue: true,
+        description: "AgentKit benchmark: native recipient is a contract."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: RECIPIENT,
+        value: "1",
+        data: "0x"
+      }
+    },
+    stateSnapshot: stateSnapshot({
+      target: {
+        address: RECIPIENT,
+        bytecode: "0x1234",
+        isContract: true
+      }
+    })
+  },
+  {
+    id: "state-lookup-failure",
+    title: "State-aware lookup failure warning",
+    source: "Generic",
+    expectedVerdict: "WARN",
+    request: {
+      requestId: "state-lookup-failure",
+      intent: {
+        action: "token_transfer",
+        chainId: CHAIN_ID,
+        from: FROM,
+        tokenAddress: TOKEN,
+        recipient: RECIPIENT,
+        amount: "1",
+        description: "Generic benchmark: RPC state lookup fails closed to warning."
+      },
+      transaction: {
+        chainId: CHAIN_ID,
+        from: FROM,
+        to: TOKEN,
+        value: "0",
+        data: encodeErc20Transfer(RECIPIENT, 1n)
+      }
+    },
+    stateSnapshot: stateSnapshot({
+      lookupErrors: [
+        {
+          subject: TOKEN,
+          operation: "erc20.balanceOf",
+          message: "mock RPC unavailable"
+        }
+      ]
+    })
+  },
+  {
     id: "typed-data-transfer-authorization",
     title: "EIP-3009 transfer authorization",
     source: "Generic",
@@ -510,4 +678,26 @@ function encodeAddress(address: Address): string {
 
 function encodeUint256(value: bigint): string {
   return value.toString(16).padStart(64, "0");
+}
+
+function stateSnapshot(overrides: Partial<ChainStateSnapshot>): ChainStateSnapshot {
+  return {
+    chainId: CHAIN_ID,
+    blockTag: "latest",
+    account: {
+      address: FROM,
+      nativeBalance: "1000000000000000000",
+      nonce: 1
+    },
+    target: {
+      address: TOKEN,
+      bytecode: "0x1234",
+      isContract: true
+    },
+    erc20: [],
+    erc721: [],
+    erc1155: [],
+    lookupErrors: [],
+    ...overrides
+  };
 }

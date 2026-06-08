@@ -45,12 +45,17 @@ The V1 response also includes:
 - `decodedActions`
 - `assetDeltas`
 - `approvalFindings`
+- `stateSnapshot` when chain state is configured or injected
+- `stateFindings` when chain state contributes findings
 - `benchmarkProfile`
 - `simulationResult.revertReason` when an RPC simulation fails
 
 The API also applies short-lived signer session checks and configured local
 address-intelligence findings before producing the final verdict and report
 hash.
+
+Set `ANALYSIS_RPC_URL` to enable live EVM state snapshots. Optional
+`ANALYSIS_RPC_TIMEOUT_MS` defaults to `3000`.
 
 ## `POST /analyze-signature`
 

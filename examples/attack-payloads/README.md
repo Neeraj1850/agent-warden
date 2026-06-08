@@ -13,6 +13,7 @@ It demonstrates common agent signing risks:
 - EIP-7702 authorization-list transaction
 - EIP-2612/Permit2-style approval bypass
 - EIP-712 permit, EIP-3009 transfer authorization, and blind `eth_sign`
+- state-aware insufficient balance, dangerous allowance, fake router, contract recipient, and lookup-failure scenarios
 - EIP-4337 account abstraction bundle
 - native value hidden in a contract call
 - unknown selector

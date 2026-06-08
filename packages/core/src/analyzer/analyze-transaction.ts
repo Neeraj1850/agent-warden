@@ -9,9 +9,11 @@ import { evaluatePolicies } from "../policy/policy-engine.js";
 import type { PolicyViolation } from "../types/policy.types.js";
 import type {
   AnalysisRequest,
+  ReportFinding,
   SecurityReport,
   SimulationResult
 } from "../types/report.types.js";
+import type { ChainStateSnapshot } from "../types/state.types.js";
 import { hashObject } from "../utils/hashing.js";
 import { validateAnalysisRequest } from "../utils/validation.js";
 
@@ -66,9 +68,13 @@ export async function analyzeTransactionWithSimulation(
 export function applyAdditionalPolicyViolations(
   request: AnalysisRequest,
   report: SecurityReport,
-  additionalViolations: PolicyViolation[]
+  additionalViolations: PolicyViolation[],
+  context: {
+    stateSnapshot?: ChainStateSnapshot;
+    stateViolations?: PolicyViolation[];
+  } = {}
 ): SecurityReport {
-  if (additionalViolations.length === 0) {
+  if (additionalViolations.length === 0 && !context.stateSnapshot) {
     return report;
   }
 
@@ -88,6 +94,9 @@ export function applyAdditionalPolicyViolations(
     simulationResult: report.simulationResult,
     saferAlternative: report.saferAlternative
   });
+  const stateFindings = context.stateSnapshot
+    ? (context.stateViolations ?? []).map(policyViolationToFinding)
+    : report.stateFindings;
   const { reportHash: _previousHash, ...canonicalReport } = {
     ...report,
     verdict,
@@ -98,7 +107,9 @@ export function applyAdditionalPolicyViolations(
       report.simulationResult
     ),
     ...narrative,
-    policyViolations
+    policyViolations,
+    stateSnapshot: context.stateSnapshot ?? report.stateSnapshot,
+    stateFindings
   };
 
   return {
@@ -191,6 +202,27 @@ function dedupePolicyViolations(violations: PolicyViolation[]): PolicyViolation[
     seen.add(key);
     return true;
   });
+}
+
+function policyViolationToFinding(violation: PolicyViolation): ReportFinding {
+  return {
+    code: violation.code,
+    title: titleCase(violation.code),
+    severity: violation.severity,
+    detail: violation.message,
+    evidence: [
+      ...(violation.expected ? [`expected=${violation.expected}`] : []),
+      ...(violation.actual ? [`actual=${violation.actual}`] : [])
+    ]
+  };
+}
+
+function titleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }
 
 function staticSimulation(

@@ -313,6 +313,12 @@ components:
             type: object
         simulationResult:
           type: object
+        stateSnapshot:
+          $ref: "#/components/schemas/ChainStateSnapshot"
+        stateFindings:
+          type: array
+          items:
+            type: object
         saferAlternative:
           type: string
         reportHash:
@@ -477,3 +483,53 @@ components:
           type: boolean
         hasUnknownNode:
           type: boolean
+    ChainStateSnapshot:
+      type: object
+      required:
+        - chainId
+        - blockTag
+        - account
+        - erc20
+        - erc721
+        - erc1155
+        - lookupErrors
+      properties:
+        chainId:
+          type: integer
+        blockTag:
+          enum:
+            - latest
+        account:
+          type: object
+          properties:
+            address:
+              $ref: "#/components/schemas/Address"
+            nativeBalance:
+              $ref: "#/components/schemas/DecimalString"
+            nonce:
+              type: integer
+        target:
+          type: object
+          properties:
+            address:
+              $ref: "#/components/schemas/Address"
+            bytecode:
+              $ref: "#/components/schemas/Hex"
+            isContract:
+              type: boolean
+        erc20:
+          type: array
+          items:
+            type: object
+        erc721:
+          type: array
+          items:
+            type: object
+        erc1155:
+          type: array
+          items:
+            type: object
+        lookupErrors:
+          type: array
+          items:
+            type: object

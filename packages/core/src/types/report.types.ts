@@ -1,5 +1,6 @@
 import type { TransactionIntent } from "./intent.types.js";
 import type { PolicyViolation, Verdict } from "./policy.types.js";
+import type { ChainStateSnapshot } from "./state.types.js";
 import type {
   ActionType,
   ApprovalFinding,
@@ -63,6 +64,8 @@ export interface SecurityReport {
   decodedTransaction: DecodedTransaction;
   policyViolations: PolicyViolation[];
   simulationResult: SimulationResult;
+  stateSnapshot?: ChainStateSnapshot;
+  stateFindings?: ReportFinding[];
   saferAlternative?: string;
   reportHash: string;
 }

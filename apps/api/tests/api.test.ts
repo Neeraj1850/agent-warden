@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import type { Server } from "node:http";
-import { LocalReputationProvider } from "@agent-warden/core";
+import {
+  LocalReputationProvider,
+  type AnalysisRequest,
+  type ChainStateProvider,
+  type ChainStateSnapshot,
+  type SecurityReport
+} from "@agent-warden/core";
 import { createApiServer } from "../src/server.js";
 import type { ApiEnv } from "../src/config/env.js";
 
@@ -172,6 +178,114 @@ describe("AgentWarden API", () => {
     }
   });
 
+  it("includes a state snapshot when a chain-state provider is injected", async () => {
+    const app = await createApiServer(testEnv(), {
+      chainStateProvider: new StaticChainStateProvider({
+        erc20: [
+          {
+            tokenAddress: TOKEN,
+            owner: FROM,
+            balance: "10"
+          }
+        ]
+      })
+    });
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const response = await postJson(`http://127.0.0.1:${address.port}/analyze`, {
+        requestId: "state-safe-transfer",
+        intent: {
+          action: "token_transfer",
+          chainId: 5042002,
+          from: FROM,
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          amount: "1"
+        },
+        transaction: {
+          chainId: 5042002,
+          from: FROM,
+          to: TOKEN,
+          value: "0",
+          data: encodeErc20Transfer(RECIPIENT, 1n)
+        }
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.verdict, "ALLOW");
+      assert.equal(body.stateSnapshot.erc20[0].balance, "10");
+      assert.deepEqual(body.stateFindings, []);
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+
+  it("blocks unsafe transfer with insufficient injected state", async () => {
+    const app = await createApiServer(testEnv(), {
+      chainStateProvider: new StaticChainStateProvider({
+        erc20: [
+          {
+            tokenAddress: TOKEN,
+            owner: FROM,
+            balance: "0"
+          }
+        ]
+      })
+    });
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const response = await postJson(`http://127.0.0.1:${address.port}/analyze`, {
+        requestId: "state-unsafe-transfer",
+        intent: {
+          action: "token_transfer",
+          chainId: 5042002,
+          from: FROM,
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          amount: "1"
+        },
+        transaction: {
+          chainId: 5042002,
+          from: FROM,
+          to: TOKEN,
+          value: "0",
+          data: encodeErc20Transfer(RECIPIENT, 1n)
+        }
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.verdict, "BLOCK");
+      assert.ok(
+        body.policyViolations.some(
+          (violation: { code: string }) => violation.code === "INSUFFICIENT_TOKEN_BALANCE"
+        )
+      );
+      assert.ok(
+        body.stateFindings.some(
+          (finding: { code: string }) => finding.code === "INSUFFICIENT_TOKEN_BALANCE"
+        )
+      );
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+
   it("blocks permit signature analysis", async () => {
     const response = await postJson(`${baseUrl}/analyze-signature`, {
       requestId: "permit",
@@ -250,8 +364,40 @@ function testEnv(): ApiEnv {
     x402PayTo: "",
     x402Network: "eip155:84532",
     x402Price: "$0.001",
-    x402FacilitatorUrl: "https://x402.org/facilitator"
+    x402FacilitatorUrl: "https://x402.org/facilitator",
+    analysisRpcTimeoutMs: 3_000
   };
+}
+
+class StaticChainStateProvider implements ChainStateProvider {
+  constructor(private readonly overrides: Partial<ChainStateSnapshot>) {}
+
+  async getSnapshot(
+    request: AnalysisRequest,
+    _report: SecurityReport
+  ): Promise<ChainStateSnapshot> {
+    return {
+      chainId: request.transaction.chainId,
+      blockTag: "latest",
+      account: {
+        address: request.transaction.from,
+        nativeBalance: "1000000000000000000",
+        nonce: 1
+      },
+      target: request.transaction.to
+        ? {
+            address: request.transaction.to,
+            bytecode: "0x1234",
+            isContract: true
+          }
+        : undefined,
+      erc20: [],
+      erc721: [],
+      erc1155: [],
+      lookupErrors: [],
+      ...this.overrides
+    };
+  }
 }
 
 function onceListening(server: Server): Promise<void> {

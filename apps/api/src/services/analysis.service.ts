@@ -5,16 +5,21 @@ import {
   InMemorySessionStore,
   LocalReputationProvider,
   policyViolationsFromReputationSignals,
+  evaluateStatePolicies,
   validateAnalysisRequest
 } from "@agent-warden/core";
 import type {
   AnalysisRequest,
+  ChainStateProvider,
   PolicyViolation,
   ReputationProvider,
   SecurityReport,
   SignatureAnalysisRequest,
-  SignatureSecurityReport
+  SignatureSecurityReport,
+  ChainStateSnapshot
 } from "@agent-warden/core";
+import { ViemChainStateProvider } from "@agent-warden/core";
+import type { ApiEnv } from "../config/env.js";
 
 export interface AnalysisService {
   analyzeRequest(request: unknown): Promise<SecurityReport>;
@@ -24,13 +29,25 @@ export interface AnalysisService {
 export interface AnalysisServiceOptions {
   sessionStore?: InMemorySessionStore;
   reputationProvider?: ReputationProvider;
+  chainStateProvider?: ChainStateProvider;
 }
 
 export function createAnalysisService(
+  env: Pick<ApiEnv, "analysisRpcUrl" | "analysisRpcTimeoutMs"> = {
+    analysisRpcTimeoutMs: 3_000
+  },
   options: AnalysisServiceOptions = {}
 ): AnalysisService {
   const sessionStore = options.sessionStore ?? new InMemorySessionStore();
   const reputationProvider = options.reputationProvider ?? new LocalReputationProvider();
+  const chainStateProvider =
+    options.chainStateProvider ??
+    (env.analysisRpcUrl
+      ? new ViemChainStateProvider({
+          rpcUrl: env.analysisRpcUrl,
+          timeoutMs: env.analysisRpcTimeoutMs
+        })
+      : undefined);
 
   return {
     async analyzeRequest(request: unknown): Promise<SecurityReport> {
@@ -45,10 +62,21 @@ export function createAnalysisService(
         baseReport,
         reputationProvider
       );
-      const report = applyAdditionalPolicyViolations(normalizedRequest, baseReport, [
-        ...sessionViolations,
-        ...reputationViolations
-      ]);
+      const stateAnalysis: {
+        snapshot?: ChainStateSnapshot;
+        violations: PolicyViolation[];
+      } = chainStateProvider
+        ? await collectStateAnalysis(normalizedRequest, baseReport, chainStateProvider)
+        : { violations: [] };
+      const report = applyAdditionalPolicyViolations(
+        normalizedRequest,
+        baseReport,
+        [...sessionViolations, ...reputationViolations, ...stateAnalysis.violations],
+        {
+          stateSnapshot: stateAnalysis.snapshot,
+          stateViolations: stateAnalysis.violations
+        }
+      );
 
       sessionStore.recordTransaction(normalizedRequest.transaction.from, report);
       return report;
@@ -95,6 +123,48 @@ async function collectReputationViolations(
   ).flat();
 
   return policyViolationsFromReputationSignals(signals);
+}
+
+async function collectStateAnalysis(
+  request: AnalysisRequest,
+  report: SecurityReport,
+  chainStateProvider: ChainStateProvider
+) {
+  try {
+    const snapshot = await chainStateProvider.getSnapshot(request, report);
+    return {
+      snapshot,
+      violations: evaluateStatePolicies(request, report, snapshot)
+    };
+  } catch (error) {
+    const snapshot = {
+      chainId: request.transaction.chainId,
+      blockTag: "latest" as const,
+      account: {
+        address: request.transaction.from
+      },
+      target: request.transaction.to
+        ? {
+            address: request.transaction.to
+          }
+        : undefined,
+      erc20: [],
+      erc721: [],
+      erc1155: [],
+      lookupErrors: [
+        {
+          subject: request.transaction.to ?? request.transaction.from,
+          operation: "state.snapshot",
+          message: error instanceof Error ? error.message : "Unknown state error"
+        }
+      ]
+    };
+
+    return {
+      snapshot,
+      violations: evaluateStatePolicies(request, report, snapshot)
+    };
+  }
 }
 
 export const defaultAnalysisService = createAnalysisService();
