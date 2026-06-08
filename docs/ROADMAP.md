@@ -23,6 +23,7 @@
 ## Phase 3: Security Depth
 
 - Anvil fork simulation
+- simulation provider interface and deterministic simulation policy
 - ABI registry
 - Permit and Permit2 detection
 - multicall analysis

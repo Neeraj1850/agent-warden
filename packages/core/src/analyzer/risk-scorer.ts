@@ -155,5 +155,9 @@ function simulationRisk(simulationResult?: SimulationResult): number {
     return 50;
   }
 
+  if (simulationResult?.status === "unavailable") {
+    return 20;
+  }
+
   return 0;
 }

@@ -4,14 +4,22 @@ import type { Server } from "node:http";
 import {
   LocalReputationProvider,
   EthersChainStateProvider,
+  AnvilSimulator,
+  EthCallSimulator,
+  StaticSimulator,
   type AnalysisRequest,
   type ChainStateProvider,
   type ChainStateSnapshot,
   type ReportExplainer,
-  type SecurityReport
+  type SecurityReport,
+  type SimulationResult,
+  type TransactionSimulator
 } from "@agent-warden/core";
 import { createApiServer } from "../src/server.js";
-import { createDefaultChainStateProvider } from "../src/services/analysis.service.js";
+import {
+  createDefaultChainStateProvider,
+  createDefaultTransactionSimulator
+} from "../src/services/analysis.service.js";
 import type { ApiEnv } from "../src/config/env.js";
 
 const FROM = "0x1111111111111111111111111111111111111111";
@@ -298,6 +306,83 @@ describe("AgentWarden API", () => {
     assert.ok(provider instanceof EthersChainStateProvider);
   });
 
+  it("uses simulation provider selection from env", () => {
+    assert.ok(
+      createDefaultTransactionSimulator({
+        simulationMode: "static",
+        simulationTimeoutMs: 10_000
+      }) instanceof StaticSimulator
+    );
+    assert.ok(
+      createDefaultTransactionSimulator({
+        analysisRpcUrl: "http://127.0.0.1:8545",
+        simulationTimeoutMs: 10_000
+      }) instanceof EthCallSimulator
+    );
+    assert.ok(
+      createDefaultTransactionSimulator({
+        simulationMode: "anvil",
+        anvilRpcUrl: "http://127.0.0.1:8545",
+        analysisRpcUrl: "http://127.0.0.1:9545",
+        simulationTimeoutMs: 10_000
+      }) instanceof AnvilSimulator
+    );
+  });
+
+  it("includes injected simulation evidence in analysis responses", async () => {
+    const app = await createApiServer(testEnv(), {
+      transactionSimulator: new FixedSimulator({
+        status: "failed",
+        engine: "anvil",
+        failureCode: "reverted",
+        summary: "reverted",
+        revertReason: "forced test revert",
+        balanceDeltas: []
+      })
+    });
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const response = await postJson(`http://127.0.0.1:${address.port}/analyze`, {
+        requestId: "sim-revert",
+        intent: {
+          action: "token_transfer",
+          chainId: 5042002,
+          from: FROM,
+          tokenAddress: TOKEN,
+          recipient: RECIPIENT,
+          amount: "1"
+        },
+        transaction: {
+          chainId: 5042002,
+          from: FROM,
+          to: TOKEN,
+          value: "0",
+          data: encodeErc20Transfer(RECIPIENT, 1n)
+        }
+      });
+      const body = await response.json();
+
+      assert.equal(response.status, 200);
+      assert.equal(body.verdict, "BLOCK");
+      assert.equal(body.simulationResult.engine, "anvil");
+      assert.equal(body.simulationResult.failureCode, "reverted");
+      assert.ok(
+        body.policyViolations.some(
+          (violation: { code: string }) => violation.code === "SIMULATION_REVERTED"
+        )
+      );
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+
   it("blocks permit signature analysis", async () => {
     const response = await postJson(`${baseUrl}/analyze-signature`, {
       requestId: "permit",
@@ -434,8 +519,17 @@ function testEnv(): ApiEnv {
     x402Price: "$0.001",
     x402FacilitatorUrl: "https://x402.org/facilitator",
     analysisRpcTimeoutMs: 3_000,
+    simulationTimeoutMs: 10_000,
     groqModel: "llama-3.1-8b-instant"
   };
+}
+
+class FixedSimulator implements TransactionSimulator {
+  constructor(private readonly result: SimulationResult) {}
+
+  async simulate(_request: AnalysisRequest): Promise<SimulationResult> {
+    return this.result;
+  }
 }
 
 class FailingExplainer implements ReportExplainer {

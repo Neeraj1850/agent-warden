@@ -8,6 +8,9 @@ export interface ApiEnv {
   x402FacilitatorUrl: string;
   analysisRpcUrl?: string;
   analysisRpcTimeoutMs: number;
+  simulationMode?: "static" | "eth_call" | "anvil";
+  anvilRpcUrl?: string;
+  simulationTimeoutMs: number;
   groqApiKey?: string;
   groqModel: string;
 }
@@ -26,6 +29,9 @@ export function getEnv(): ApiEnv {
       process.env.X402_FACILITATOR_URL ?? "https://x402.org/facilitator",
     analysisRpcUrl: optionalEnv(process.env.ANALYSIS_RPC_URL),
     analysisRpcTimeoutMs: Number(process.env.ANALYSIS_RPC_TIMEOUT_MS ?? 3_000),
+    simulationMode: optionalSimulationMode(process.env.SIMULATION_MODE),
+    anvilRpcUrl: optionalEnv(process.env.ANVIL_RPC_URL),
+    simulationTimeoutMs: Number(process.env.SIMULATION_TIMEOUT_MS ?? 10_000),
     groqApiKey: optionalEnv(process.env.GROQ_API_KEY),
     groqModel: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant"
   };
@@ -33,4 +39,12 @@ export function getEnv(): ApiEnv {
 
 function optionalEnv(value: string | undefined): string | undefined {
   return value && value.trim().length > 0 ? value : undefined;
+}
+
+function optionalSimulationMode(value: string | undefined): ApiEnv["simulationMode"] {
+  if (value === "static" || value === "eth_call" || value === "anvil") {
+    return value;
+  }
+
+  return undefined;
 }

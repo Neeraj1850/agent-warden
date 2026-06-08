@@ -4,9 +4,11 @@ import type { ChainStateSnapshot } from "./state.types.js";
 import type {
   ActionType,
   ApprovalFinding,
+  Address,
   DecodedAction,
   DecodedTransaction,
   ExecutionGraph,
+  Hex,
   TokenBalanceDelta,
   TransactionEnvelope,
   UnsignedEvmTransaction
@@ -18,12 +20,54 @@ export interface AnalysisRequest {
   requestId?: string;
 }
 
+export type SimulationStatus = "not_run" | "success" | "failed" | "unavailable";
+
+export type SimulationFailureCode =
+  | "reverted"
+  | "chain_mismatch"
+  | "unavailable"
+  | "unsupported"
+  | "state_restore_failed";
+
+export type SimulationEngine =
+  | "local-static"
+  | "eth_call"
+  | "anvil"
+  | "tenderly"
+  | "blocksec";
+
+export interface SimulationLog {
+  address: Address;
+  topics: Hex[];
+  data: Hex;
+}
+
+export interface ObservedApproval {
+  standard: "erc20" | "erc721" | "erc1155" | "unknown";
+  owner: Address;
+  tokenAddress: Address;
+  spender?: Address;
+  operator?: Address;
+  amount?: string;
+  tokenId?: string;
+  approved?: boolean;
+}
+
 export interface SimulationResult {
-  status: "not_run" | "success" | "failed";
-  engine: "local-static" | "eth_call" | "anvil" | "tenderly" | "blocksec";
+  status: SimulationStatus;
+  engine: SimulationEngine;
   summary: string;
   balanceDeltas: TokenBalanceDelta[];
+  failureCode?: SimulationFailureCode;
   revertReason?: string;
+  gasUsed?: string;
+  blockNumber?: number;
+  logs?: SimulationLog[];
+  observedAssetDeltas?: TokenBalanceDelta[];
+  observedApprovals?: ObservedApproval[];
+  forkChainId?: number;
+  fallbackFrom?: SimulationEngine;
+  fallbackReason?: string;
 }
 
 export type ReportFindingSeverity = "info" | "low" | "medium" | "high" | "critical";

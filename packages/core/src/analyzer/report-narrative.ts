@@ -112,6 +112,26 @@ function approvalFindingsToReportFindings(
 }
 
 function simulationFindings(simulationResult: SimulationResult): ReportFinding[] {
+  if (simulationResult.status === "unavailable" || simulationResult.fallbackFrom) {
+    return [
+      {
+        code: "SIMULATION_UNAVAILABLE",
+        title: "Simulation Unavailable",
+        severity: "medium",
+        detail:
+          simulationResult.fallbackReason ??
+          simulationResult.revertReason ??
+          simulationResult.summary,
+        evidence: [
+          `engine=${simulationResult.engine}`,
+          ...(simulationResult.fallbackFrom
+            ? [`fallbackFrom=${simulationResult.fallbackFrom}`]
+            : [])
+        ]
+      }
+    ];
+  }
+
   if (simulationResult.status !== "failed") {
     return [];
   }
@@ -120,11 +140,16 @@ function simulationFindings(simulationResult: SimulationResult): ReportFinding[]
     {
       code: "SIMULATION_FAILED",
       title: "Simulation Failed",
-      severity: "medium",
+      severity: simulationResult.failureCode === "reverted" ? "critical" : "medium",
       detail: simulationResult.revertReason
-        ? `RPC simulation failed: ${simulationResult.revertReason}`
-        : "RPC simulation failed without a revert reason.",
-      evidence: [`engine=${simulationResult.engine}`]
+        ? `Execution simulation failed: ${simulationResult.revertReason}`
+        : "Execution simulation failed without a revert reason.",
+      evidence: [
+        `engine=${simulationResult.engine}`,
+        ...(simulationResult.failureCode
+          ? [`failureCode=${simulationResult.failureCode}`]
+          : [])
+      ]
     }
   ];
 }

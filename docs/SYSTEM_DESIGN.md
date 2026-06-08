@@ -55,11 +55,19 @@ AgentWarden V1 analyzes the agent-common EVM transaction surface:
 - deterministic local address registries for known routers, known tokens, and risky targets
 - optional live state snapshots for balances, target bytecode, allowances, NFT ownership, and operator approvals
 
-Set `ANALYSIS_RPC_URL` to enable optional free RPC `eth_call` success/failure simulation.
-The same variable enables state snapshots through `EthersChainStateProvider`;
-set `ANALYSIS_RPC_TIMEOUT_MS` to tune the per-RPC timeout, default `3000`.
+Simulation is selected through `SIMULATION_MODE=static|eth_call|anvil`.
+`eth_call` uses `ANALYSIS_RPC_URL`; Anvil uses an externally started fork at
+`ANVIL_RPC_URL`. AgentWarden does not install or manage Foundry processes.
+`SIMULATION_TIMEOUT_MS` defaults to `10000`.
+`ANALYSIS_RPC_URL` also enables state snapshots through `EthersChainStateProvider`;
+set `ANALYSIS_RPC_TIMEOUT_MS` to tune the state-read timeout, default `3000`.
 `ViemChainStateProvider` remains available, while viem continues to be used for
 ABI and calldata decoding.
+
+Simulation evidence can raise verdicts but never downgrade them. Confirmed
+reverts, simulation chain mismatch, unexpected simulated outflows, unexpected
+simulated approvals, and fork restore failures become deterministic policy
+violations.
 
 ## State-Aware Analysis
 

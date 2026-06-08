@@ -476,14 +476,15 @@ describe("analyzeTransaction", () => {
     assert.equal(report.simulationResult.engine, "local-static");
   });
 
-  it("reports eth_call failure when RPC simulation fails", async () => {
+  it("reports eth_call unavailable when RPC transport fails", async () => {
     const report = await analyzeTransactionWithSimulation(
       transferRequest({ recipient: RECIPIENT }),
       { rpcUrl: "http://127.0.0.1:1" }
     );
 
-    assert.equal(report.simulationResult.status, "failed");
+    assert.equal(report.simulationResult.status, "unavailable");
     assert.equal(report.simulationResult.engine, "eth_call");
+    assert.equal(report.simulationResult.failureCode, "unavailable");
     assert.ok(report.simulationResult.revertReason);
   });
 });

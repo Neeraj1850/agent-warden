@@ -57,6 +57,9 @@ hash.
 Set `ANALYSIS_RPC_URL` to enable live EVM state snapshots through the default
 ethers-backed JSON-RPC provider. Optional `ANALYSIS_RPC_TIMEOUT_MS` defaults to
 `3000`. Alchemy SDK is not required for the current exact pre-sign reads.
+Simulation defaults to `eth_call` when `ANALYSIS_RPC_URL` exists and `static`
+otherwise. Set `SIMULATION_MODE=anvil` and `ANVIL_RPC_URL` to use an external
+Anvil fork for execution evidence.
 
 ## `POST /analyze-signature`
 

@@ -1,8 +1,10 @@
 import {
   applyAdditionalPolicyViolations,
+  AnvilSimulator,
   analyzeSignature,
   analyzeTransactionWithSimulation,
   EthersChainStateProvider,
+  EthCallSimulator,
   explainReport,
   GroqExplainer,
   InMemorySessionStore,
@@ -10,6 +12,7 @@ import {
   policyViolationsFromReputationSignals,
   evaluateStatePolicies,
   SafeExplainer,
+  StaticSimulator,
   validateAnalysisRequest,
   validateExplainReportRequest
 } from "@agent-warden/core";
@@ -23,7 +26,8 @@ import type {
   SecurityReport,
   SignatureAnalysisRequest,
   SignatureSecurityReport,
-  ChainStateSnapshot
+  ChainStateSnapshot,
+  TransactionSimulator
 } from "@agent-warden/core";
 import type { ApiEnv } from "../config/env.js";
 
@@ -37,6 +41,7 @@ export interface AnalysisServiceOptions {
   sessionStore?: InMemorySessionStore;
   reputationProvider?: ReputationProvider;
   chainStateProvider?: ChainStateProvider;
+  transactionSimulator?: TransactionSimulator;
   reportExplainer?: ReportExplainer;
   fallbackReportExplainer?: ReportExplainer;
 }
@@ -44,9 +49,16 @@ export interface AnalysisServiceOptions {
 export function createAnalysisService(
   env: Pick<
     ApiEnv,
-    "analysisRpcUrl" | "analysisRpcTimeoutMs" | "groqApiKey" | "groqModel"
+    | "analysisRpcUrl"
+    | "analysisRpcTimeoutMs"
+    | "simulationMode"
+    | "anvilRpcUrl"
+    | "simulationTimeoutMs"
+    | "groqApiKey"
+    | "groqModel"
   > = {
     analysisRpcTimeoutMs: 3_000,
+    simulationTimeoutMs: 10_000,
     groqModel: "llama-3.1-8b-instant"
   },
   options: AnalysisServiceOptions = {}
@@ -55,6 +67,8 @@ export function createAnalysisService(
   const reputationProvider = options.reputationProvider ?? new LocalReputationProvider();
   const chainStateProvider =
     options.chainStateProvider ?? createDefaultChainStateProvider(env);
+  const transactionSimulator =
+    options.transactionSimulator ?? createDefaultTransactionSimulator(env);
   const reportExplainer = options.reportExplainer ?? createDefaultReportExplainer(env);
   const fallbackReportExplainer = options.fallbackReportExplainer ?? new SafeExplainer();
 
@@ -65,7 +79,9 @@ export function createAnalysisService(
         normalizedRequest.transaction.from,
         normalizedRequest.transaction
       );
-      const baseReport = await analyzeTransactionWithSimulation(normalizedRequest);
+      const baseReport = await analyzeTransactionWithSimulation(normalizedRequest, {
+        simulator: transactionSimulator
+      });
       const reputationViolations = await collectReputationViolations(
         normalizedRequest,
         baseReport,
@@ -121,6 +137,37 @@ export function createDefaultChainStateProvider(
   return new EthersChainStateProvider({
     rpcUrl: env.analysisRpcUrl,
     timeoutMs: env.analysisRpcTimeoutMs
+  });
+}
+
+export function createDefaultTransactionSimulator(
+  env: Pick<
+    ApiEnv,
+    "analysisRpcUrl" | "simulationMode" | "anvilRpcUrl" | "simulationTimeoutMs"
+  >
+): TransactionSimulator {
+  const mode = env.simulationMode ?? (env.analysisRpcUrl ? "eth_call" : "static");
+
+  if (mode === "static") {
+    return new StaticSimulator();
+  }
+
+  if (mode === "anvil") {
+    return new AnvilSimulator({
+      rpcUrl: env.anvilRpcUrl,
+      timeoutMs: env.simulationTimeoutMs,
+      fallbackSimulator: env.analysisRpcUrl
+        ? new EthCallSimulator({
+            rpcUrl: env.analysisRpcUrl,
+            timeoutMs: env.simulationTimeoutMs
+          })
+        : undefined
+    });
+  }
+
+  return new EthCallSimulator({
+    rpcUrl: env.analysisRpcUrl,
+    timeoutMs: env.simulationTimeoutMs
   });
 }
 

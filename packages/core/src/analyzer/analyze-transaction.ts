@@ -16,6 +16,17 @@ import type {
 import type { ChainStateSnapshot } from "../types/state.types.js";
 import { hashObject } from "../utils/hashing.js";
 import { validateAnalysisRequest } from "../utils/validation.js";
+import { EthCallSimulator } from "../simulation/eth-call-simulator.js";
+import { StaticSimulator } from "../simulation/static-simulator.js";
+import { evaluateSimulationPolicies } from "../simulation/simulation-policy.js";
+import { optionalRpcQuantity } from "../simulation/json-rpc-client.js";
+import type { TransactionSimulator } from "../simulation/simulator.interface.js";
+
+export interface AnalyzeTransactionWithSimulationOptions {
+  rpcUrl?: string;
+  tenderlyRpcUrl?: string;
+  simulator?: TransactionSimulator;
+}
 
 export function analyzeTransaction(request: AnalysisRequest): SecurityReport {
   const normalizedRequest = validateAnalysisRequest(request);
@@ -32,7 +43,7 @@ export function analyzeTransaction(request: AnalysisRequest): SecurityReport {
 
 export async function analyzeTransactionWithSimulation(
   request: AnalysisRequest,
-  options: { rpcUrl?: string; tenderlyRpcUrl?: string } = {}
+  options: AnalyzeTransactionWithSimulationOptions = {}
 ): Promise<SecurityReport> {
   const normalizedRequest = validateAnalysisRequest(request);
   const decodedTransaction = decodeCalldata(
@@ -41,6 +52,14 @@ export async function analyzeTransactionWithSimulation(
   );
   const tenderlyRpcUrl = options.tenderlyRpcUrl ?? process.env.TENDERLY_RPC_URL;
   const rpcUrl = options.rpcUrl ?? process.env.ANALYSIS_RPC_URL;
+
+  if (options.simulator) {
+    return buildSecurityReport(
+      normalizedRequest,
+      decodedTransaction,
+      await options.simulator.simulate(normalizedRequest)
+    );
+  }
 
   if (tenderlyRpcUrl) {
     return buildSecurityReport(
@@ -54,14 +73,14 @@ export async function analyzeTransactionWithSimulation(
     return buildSecurityReport(
       normalizedRequest,
       decodedTransaction,
-      staticSimulation(normalizedRequest, decodedTransaction)
+      await new StaticSimulator().simulate(normalizedRequest)
     );
   }
 
   return buildSecurityReport(
     normalizedRequest,
     decodedTransaction,
-    await ethCallSimulation(normalizedRequest, rpcUrl, decodedTransaction)
+    await new EthCallSimulator({ rpcUrl }).simulate(normalizedRequest)
   );
 }
 
@@ -136,6 +155,17 @@ function buildSecurityReport(
     decodedTransaction,
     transactionEnvelope
   );
+  const simulationViolations = evaluateSimulationPolicies(
+    request.intent,
+    request.transaction,
+    simulationOverride
+  );
+  const policyViolations = dedupePolicyViolations([
+    ...policyDecision.violations,
+    ...simulationViolations
+  ]);
+  const verdict = decideVerdict(policyViolations);
+  const riskScore = scoreRisk(decodedTransaction, policyViolations);
   const simulationResult: SimulationResult = {
     ...simulationOverride,
     balanceDeltas: simulationOverride.balanceDeltas.length
@@ -148,10 +178,10 @@ function buildSecurityReport(
   );
   const actionType = decodedTransaction.actionType ?? "unknown_contract_call";
   const narrative = buildReportNarrative({
-    verdict: policyDecision.verdict,
-    riskScore: policyDecision.riskScore,
+    verdict,
+    riskScore,
     actionType,
-    policyViolations: policyDecision.violations,
+    policyViolations,
     approvalFindings,
     simulationResult,
     saferAlternative: policyDecision.saferAlternative
@@ -159,13 +189,9 @@ function buildSecurityReport(
 
   const reportWithoutHash = {
     requestId: request.requestId,
-    verdict: policyDecision.verdict,
-    riskScore: policyDecision.riskScore,
-    riskVector: buildRiskVector(
-      decodedTransaction,
-      policyDecision.violations,
-      simulationResult
-    ),
+    verdict,
+    riskScore,
+    riskVector: buildRiskVector(decodedTransaction, policyViolations, simulationResult),
     ...narrative,
     transactionEnvelope,
     actionType,
@@ -175,7 +201,7 @@ function buildSecurityReport(
     approvalFindings,
     benchmarkProfile: inferBenchmarkProfile(request),
     decodedTransaction,
-    policyViolations: policyDecision.violations,
+    policyViolations,
     simulationResult,
     saferAlternative: policyDecision.saferAlternative
   };
@@ -254,7 +280,7 @@ async function tenderlySimulation(
           {
             from: request.transaction.from,
             to: request.transaction.to,
-            value: toRpcQuantity(request.transaction.value),
+            value: optionalRpcQuantity(request.transaction.value),
             input: request.transaction.data,
             gas: "0x1c9c380"
           },
@@ -293,70 +319,6 @@ async function tenderlySimulation(
       balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
     };
   }
-}
-
-async function ethCallSimulation(
-  request: AnalysisRequest,
-  rpcUrl: string,
-  decodedTransaction = decodeCalldata(request.transaction, request.intent)
-): Promise<SimulationResult> {
-  try {
-    const response = await fetch(rpcUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: request.requestId ?? "agent-warden-eth-call",
-        method: "eth_call",
-        params: [
-          {
-            from: request.transaction.from,
-            to: request.transaction.to,
-            value: toRpcQuantity(request.transaction.value),
-            data: request.transaction.data
-          },
-          "latest"
-        ]
-      })
-    });
-    const body = (await response.json()) as {
-      result?: string;
-      error?: { message?: string; data?: unknown };
-    };
-
-    if (body.error) {
-      return {
-        status: "failed",
-        engine: "eth_call",
-        summary: "eth_call simulation reverted or failed.",
-        revertReason: body.error.message ?? JSON.stringify(body.error.data),
-        balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
-      };
-    }
-
-    return {
-      status: "success",
-      engine: "eth_call",
-      summary: "eth_call simulation completed successfully.",
-      balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
-    };
-  } catch (error) {
-    return {
-      status: "failed",
-      engine: "eth_call",
-      summary: "eth_call simulation request failed.",
-      revertReason: error instanceof Error ? error.message : "Unknown RPC error",
-      balanceDeltas: inferStaticBalanceDeltas(request.transaction, decodedTransaction)
-    };
-  }
-}
-
-function toRpcQuantity(value: string | undefined): `0x${string}` | undefined {
-  if (!value || value === "0") {
-    return undefined;
-  }
-
-  return `0x${BigInt(value).toString(16)}`;
 }
 
 function inferBenchmarkProfile(
