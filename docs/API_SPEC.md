@@ -80,6 +80,10 @@ Simulation defaults to `eth_call` when `ANALYSIS_RPC_URL` exists and `static`
 otherwise. Set `SIMULATION_MODE=anvil` and `ANVIL_RPC_URL` to use an external
 Anvil fork for execution evidence.
 
+Set `REPORT_STORE_DIR` to persist completed transaction and signature reports as
+local JSON files named `<reportHash>.json`. If unset, analysis behavior is
+unchanged and report retrieval returns `404`.
+
 `intent.expectedOutcome` is optional. When present, simulation evidence is
 checked against declared recipients, token/NFT outflows, approvals, spenders,
 operators, native/token limits, and unknown-log policy before the deterministic
@@ -154,3 +158,60 @@ report hash.
 Returns `verdict`, `riskScore`, `reportHash`, `model`, `explanation`, and a
 `safetyNotice`. If `GROQ_API_KEY` is unset or the Groq call fails, AgentWarden
 returns a safe deterministic fallback explanation.
+
+## `GET /reports/:reportHash`
+
+Retrieves a locally persisted transaction or signature report when
+`REPORT_STORE_DIR` is configured.
+
+### Response
+
+Returns the persisted `SecurityReport` or `SignatureSecurityReport`.
+
+- `400` for malformed report hashes.
+- `404` when the report is not persisted or `REPORT_STORE_DIR` is unset.
+
+## `POST /verify-report`
+
+Recomputes a deterministic report hash from a completed report and its original
+request context. Verification does not call RPC, MCP tools, LLMs, or wall-clock
+state.
+
+### Request
+
+```json
+{
+  "kind": "transaction",
+  "request": {
+    "intent": {
+      "action": "token_transfer",
+      "chainId": 5042002,
+      "from": "0x1111111111111111111111111111111111111111"
+    },
+    "transaction": {
+      "chainId": 5042002,
+      "from": "0x1111111111111111111111111111111111111111",
+      "to": "0x2222222222222222222222222222222222222222",
+      "data": "0xa9059cbb..."
+    }
+  },
+  "report": {
+    "verdict": "ALLOW",
+    "riskScore": 5,
+    "reportHash": "0x..."
+  }
+}
+```
+
+For signature reports, use `"kind": "signature"` with the original
+`SignatureAnalysisRequest` and `SignatureSecurityReport`.
+
+### Response
+
+```json
+{
+  "valid": true,
+  "expectedHash": "0x...",
+  "actualHash": "0x..."
+}
+```

@@ -14,8 +14,16 @@ export const errorMiddleware: ErrorRequestHandler = (
     return;
   }
 
-  response.status(400).json({
-    error: "Bad request",
+  const statusCode =
+    error &&
+    typeof error === "object" &&
+    "statusCode" in error &&
+    typeof error.statusCode === "number"
+      ? error.statusCode
+      : 400;
+
+  response.status(statusCode).json({
+    error: statusCode >= 500 ? "Internal server error" : "Bad request",
     message: error instanceof Error ? error.message : "Unknown error"
   });
 };

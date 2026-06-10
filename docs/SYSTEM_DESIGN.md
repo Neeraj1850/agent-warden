@@ -31,6 +31,7 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - state-aware findings when RPC state is configured
 - safer alternative
 - report hash
+- optional local report persistence and verification result
 
 ## Authority Model
 
@@ -38,6 +39,11 @@ The deterministic policy engine decides the final verdict. LLMs may be added as 
 The `/explain-report` API and `explain_report` MCP tool accept completed
 transaction reports only, preserve verdict/risk/hash fields, and fall back to a
 deterministic safe explanation when Groq is unavailable.
+
+Report verification is also deterministic. `/verify-report` and the
+`verify_report` MCP tool recompute the report hash from the completed report and
+the original request context without RPC, LLMs, MCP metadata, or wall-clock
+state.
 
 ## V1 Analyzer Coverage
 
@@ -83,6 +89,22 @@ Outcome mismatches such as `UNEXPECTED_RECIPIENT`,
 `APPROVAL_NOT_IN_INTENT`, `UNEXPECTED_LOG_EVENT`, and
 `OUTCOME_EXCEEDS_INTENT` raise the final verdict without weakening any earlier
 policy decision.
+
+## Audit Trail
+
+When `REPORT_STORE_DIR` is configured, the API persists completed transaction
+and signature reports as local JSON files named `<reportHash>.json`.
+`GET /reports/:reportHash` retrieves the stored report, and `POST
+/verify-report` recomputes the expected hash from the original request context.
+
+This local store is intentionally simple: no database, no external services, and
+no mutation of report verdicts. Persistence errors return an API error only
+after analysis has completed, making storage failures visible instead of
+silently losing audit evidence.
+
+The audit trail creates the bridge toward future anchoring: first prove report
+reproducibility locally, then anchor only the deterministic report hash and any
+required metadata in a later module.
 
 ## Agent Policy Profiles
 

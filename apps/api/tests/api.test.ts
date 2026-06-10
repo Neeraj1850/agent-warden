@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import type { Server } from "node:http";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   LocalReputationProvider,
   EthersChainStateProvider,
@@ -20,6 +23,7 @@ import {
   createDefaultChainStateProvider,
   createDefaultTransactionSimulator
 } from "../src/services/analysis.service.js";
+import type { ReportStore, StoredReport } from "../src/services/report-store.service.js";
 import type { ApiEnv } from "../src/config/env.js";
 
 const FROM = "0x1111111111111111111111111111111111111111";
@@ -545,6 +549,158 @@ describe("AgentWarden API", () => {
     assert.notEqual(withoutProfile.body.reportHash, withProfile.body.reportHash);
   });
 
+  it("preserves analyze behavior when report store is not configured", async () => {
+    const { status, body } = await postAnalyzeIsolated(safeTransferBody("no-store"));
+
+    assert.equal(status, 200);
+    assert.equal(body.verdict, "ALLOW");
+    assert.match(body.reportHash ?? "", /^0x[a-f0-9]{64}$/);
+  });
+
+  it("returns 500 when configured report persistence fails", async () => {
+    const app = await createApiServer(testEnv(), {
+      reportStore: new FailingReportStore()
+    });
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const response = await postJson(
+        `http://127.0.0.1:${address.port}/analyze`,
+        safeTransferBody("store-failure")
+      );
+      const body = (await response.json()) as { error: string; message: string };
+
+      assert.equal(response.status, 500);
+      assert.equal(body.error, "Internal server error");
+      assert.match(body.message, /Report persistence failed/);
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+
+  it("writes and retrieves transaction reports when report store is configured", async () => {
+    await withReportStore(async ({ baseUrl, reportStoreDir }) => {
+      const requestBody = safeTransferBody("stored-transaction");
+      const response = await postJson(`${baseUrl}/analyze`, requestBody);
+      const report = (await response.json()) as SecurityReport;
+      const stored = JSON.parse(
+        await readFile(join(reportStoreDir, `${report.reportHash}.json`), "utf8")
+      ) as SecurityReport;
+      const getResponse = await fetch(`${baseUrl}/reports/${report.reportHash}`);
+      const retrieved = (await getResponse.json()) as SecurityReport;
+
+      assert.equal(response.status, 200);
+      assert.equal(stored.reportHash, report.reportHash);
+      assert.equal(getResponse.status, 200);
+      assert.equal(retrieved.reportHash, report.reportHash);
+    });
+  });
+
+  it("writes signature reports when report store is configured", async () => {
+    await withReportStore(async ({ baseUrl, reportStoreDir }) => {
+      const response = await postJson(`${baseUrl}/analyze-signature`, {
+        requestId: "stored-signature",
+        intent: {
+          action: "login",
+          chainId: 5042002,
+          from: FROM
+        },
+        payload: {
+          kind: "personal_sign",
+          message: "Sign in to AgentWarden with nonce 123."
+        }
+      });
+      const report = (await response.json()) as { reportHash: string };
+      const stored = JSON.parse(
+        await readFile(join(reportStoreDir, `${report.reportHash}.json`), "utf8")
+      ) as { reportHash: string };
+
+      assert.equal(response.status, 200);
+      assert.equal(stored.reportHash, report.reportHash);
+    });
+  });
+
+  it("returns 404 for unknown persisted report hashes", async () => {
+    await withReportStore(async ({ baseUrl }) => {
+      const response = await fetch(
+        `${baseUrl}/reports/0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`
+      );
+      const body = (await response.json()) as { error: string };
+
+      assert.equal(response.status, 404);
+      assert.equal(body.error, "Not found");
+    });
+  });
+
+  it("returns 400 for malformed report hashes", async () => {
+    await withReportStore(async ({ baseUrl }) => {
+      const response = await fetch(`${baseUrl}/reports/not-a-hash`);
+      const body = (await response.json()) as { error: string };
+
+      assert.equal(response.status, 400);
+      assert.equal(body.error, "Bad request");
+    });
+  });
+
+  it("verifies transaction reports through the API", async () => {
+    await withReportStore(async ({ baseUrl }) => {
+      const requestBody = safeTransferBody("verify-api");
+      const analysisResponse = await postJson(`${baseUrl}/analyze`, requestBody);
+      const report = (await analysisResponse.json()) as SecurityReport;
+      const verifyResponse = await postJson(`${baseUrl}/verify-report`, {
+        kind: "transaction",
+        request: requestBody,
+        report
+      });
+      const valid = (await verifyResponse.json()) as { valid: boolean };
+      const invalidResponse = await postJson(`${baseUrl}/verify-report`, {
+        kind: "transaction",
+        request: requestBody,
+        report: {
+          ...report,
+          riskScore: 0
+        }
+      });
+      const invalid = (await invalidResponse.json()) as { valid: boolean };
+
+      assert.equal(verifyResponse.status, 200);
+      assert.equal(valid.valid, true);
+      assert.equal(invalidResponse.status, 200);
+      assert.equal(invalid.valid, false);
+    });
+  });
+
+  it("returns 400 for malformed verify-report requests", async () => {
+    const response = await postJson(`${baseUrl}/verify-report`, {
+      kind: "transaction"
+    });
+    const body = (await response.json()) as { error: string };
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "Bad request");
+  });
+
+  it("returns 400 when verify-report contains a malformed report hash", async () => {
+    const response = await postJson(`${baseUrl}/verify-report`, {
+      kind: "transaction",
+      request: safeTransferBody("malformed-verify-hash"),
+      report: {
+        reportHash: "not-a-hash"
+      }
+    });
+    const body = (await response.json()) as { error: string; message: string };
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "Bad request");
+    assert.match(body.message, /report\.reportHash/);
+  });
+
   it("blocks permit signature analysis", async () => {
     const response = await postJson(`${baseUrl}/analyze-signature`, {
       requestId: "permit",
@@ -702,6 +858,16 @@ class FailingExplainer implements ReportExplainer {
   }
 }
 
+class FailingReportStore implements ReportStore {
+  async save(_report: StoredReport): Promise<string> {
+    throw new Error("forced storage failure");
+  }
+
+  async get(_reportHash: string): Promise<StoredReport | undefined> {
+    return undefined;
+  }
+}
+
 class StaticChainStateProvider implements ChainStateProvider {
   constructor(private readonly overrides: Partial<ChainStateSnapshot>) {}
 
@@ -790,6 +956,54 @@ async function postAnalyzeIsolated(body: unknown): Promise<{
   } finally {
     await closeServer(isolatedServer);
   }
+}
+
+async function withReportStore(
+  callback: (input: { baseUrl: string; reportStoreDir: string }) => Promise<void>
+): Promise<void> {
+  const reportStoreDir = await mkdtemp(join(tmpdir(), "agent-warden-reports-"));
+  const app = await createApiServer({
+    ...testEnv(),
+    reportStoreDir
+  });
+  const isolatedServer = app.listen(0);
+  await onceListening(isolatedServer);
+  const address = isolatedServer.address();
+
+  if (!address || typeof address === "string") {
+    throw new Error("Expected HTTP server address");
+  }
+
+  try {
+    await callback({
+      baseUrl: `http://127.0.0.1:${address.port}`,
+      reportStoreDir
+    });
+  } finally {
+    await closeServer(isolatedServer);
+    await rm(reportStoreDir, { recursive: true, force: true });
+  }
+}
+
+function safeTransferBody(requestId: string) {
+  return {
+    requestId,
+    intent: {
+      action: "token_transfer",
+      chainId: 5042002,
+      from: FROM,
+      tokenAddress: TOKEN,
+      recipient: RECIPIENT,
+      amount: "1"
+    },
+    transaction: {
+      chainId: 5042002,
+      from: FROM,
+      to: TOKEN,
+      value: "0",
+      data: encodeErc20Transfer(RECIPIENT, 1n)
+    }
+  };
 }
 
 function hasViolation(

@@ -33,6 +33,12 @@ import {
   getPolicyToolName
 } from "./tools/get-policy.tool.js";
 import {
+  executeGetReportTool,
+  getReportToolDescription,
+  getReportToolInputSchema,
+  getReportToolName
+} from "./tools/get-report.tool.js";
+import {
   executeGetPolicyProfileTool,
   getPolicyProfileToolDescription,
   getPolicyProfileToolInputSchema,
@@ -50,6 +56,12 @@ import {
   explainReportToolInputSchema,
   explainReportToolName
 } from "./tools/explain-report.tool.js";
+import {
+  executeVerifyReportTool,
+  verifyReportToolDescription,
+  verifyReportToolInputSchema,
+  verifyReportToolName
+} from "./tools/verify-report.tool.js";
 
 export function createMcpServer(): McpServer {
   const server = new McpServer({
@@ -113,6 +125,22 @@ export function createMcpServer(): McpServer {
         input as unknown as Parameters<typeof executeExplainReportTool>[0]
       )
   );
+  server.tool(
+    verifyReportToolName,
+    verifyReportToolDescription,
+    verifyReportToolInputSchema,
+    async (input) =>
+      executeVerifyReportTool(
+        input as unknown as Parameters<typeof executeVerifyReportTool>[0]
+      )
+  );
+  server.tool(
+    getReportToolName,
+    getReportToolDescription,
+    getReportToolInputSchema,
+    async (input) =>
+      executeGetReportTool(input as Parameters<typeof executeGetReportTool>[0])
+  );
 
   return server;
 }
@@ -155,6 +183,14 @@ if (process.argv.includes("--describe")) {
           {
             name: explainReportToolName,
             description: explainReportToolDescription
+          },
+          {
+            name: verifyReportToolName,
+            description: verifyReportToolDescription
+          },
+          {
+            name: getReportToolName,
+            description: getReportToolDescription
           }
         ]
       },

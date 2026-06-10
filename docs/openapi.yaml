@@ -102,8 +102,67 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /reports/{reportHash}:
+    get:
+      summary: Retrieve a persisted report
+      description: Returns a locally persisted transaction or signature report when REPORT_STORE_DIR is configured.
+      operationId: getReport
+      parameters:
+        - name: reportHash
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ReportHash"
+      responses:
+        "200":
+          description: Persisted report
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SecurityReport"
+                  - $ref: "#/components/schemas/SignatureSecurityReport"
+        "400":
+          description: Malformed report hash
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /verify-report:
+    post:
+      summary: Verify a deterministic report hash
+      description: Recomputes a report hash from the completed report and original request context.
+      operationId: verifyReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyReportRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyReportResponse"
+        "400":
+          description: Malformed request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
+    ReportHash:
+      type: string
+      pattern: "^0x[a-f0-9]{64}$"
     Address:
       type: string
       pattern: "^0x[a-fA-F0-9]{40}$"
@@ -178,6 +237,45 @@ components:
           type: string
         safetyNotice:
           type: string
+    VerifyReportRequest:
+      oneOf:
+        - type: object
+          required:
+            - kind
+            - request
+            - report
+          properties:
+            kind:
+              const: transaction
+            request:
+              $ref: "#/components/schemas/AnalysisRequest"
+            report:
+              $ref: "#/components/schemas/SecurityReport"
+        - type: object
+          required:
+            - kind
+            - request
+            - report
+          properties:
+            kind:
+              const: signature
+            request:
+              $ref: "#/components/schemas/SignatureAnalysisRequest"
+            report:
+              $ref: "#/components/schemas/SignatureSecurityReport"
+    VerifyReportResponse:
+      type: object
+      required:
+        - valid
+        - expectedHash
+        - actualHash
+      properties:
+        valid:
+          type: boolean
+        expectedHash:
+          $ref: "#/components/schemas/ReportHash"
+        actualHash:
+          $ref: "#/components/schemas/ReportHash"
     SignatureIntent:
       type: object
       required:

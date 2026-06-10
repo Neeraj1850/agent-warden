@@ -14,7 +14,8 @@ import {
   SafeExplainer,
   StaticSimulator,
   validateAnalysisRequest,
-  validateExplainReportRequest
+  validateExplainReportRequest,
+  verifyReportHash
 } from "@agent-warden/core";
 import type {
   AnalysisRequest,
@@ -27,14 +28,23 @@ import type {
   SignatureAnalysisRequest,
   SignatureSecurityReport,
   ChainStateSnapshot,
-  TransactionSimulator
+  TransactionSimulator,
+  VerifyReportRequest,
+  VerifyReportResponse
 } from "@agent-warden/core";
 import type { ApiEnv } from "../config/env.js";
+import {
+  FileReportStore,
+  type ReportStore,
+  type StoredReport
+} from "./report-store.service.js";
 
 export interface AnalysisService {
   analyzeRequest(request: unknown): Promise<SecurityReport>;
-  analyzeSignatureRequest(request: unknown): SignatureSecurityReport;
+  analyzeSignatureRequest(request: unknown): Promise<SignatureSecurityReport>;
   explainReportRequest(request: unknown): Promise<ExplainReportResponse>;
+  getReport(reportHash: string): Promise<StoredReport | undefined>;
+  verifyReportRequest(request: unknown): VerifyReportResponse;
 }
 
 export interface AnalysisServiceOptions {
@@ -44,6 +54,7 @@ export interface AnalysisServiceOptions {
   transactionSimulator?: TransactionSimulator;
   reportExplainer?: ReportExplainer;
   fallbackReportExplainer?: ReportExplainer;
+  reportStore?: ReportStore;
 }
 
 export function createAnalysisService(
@@ -56,6 +67,7 @@ export function createAnalysisService(
     | "simulationTimeoutMs"
     | "groqApiKey"
     | "groqModel"
+    | "reportStoreDir"
   > = {
     analysisRpcTimeoutMs: 3_000,
     simulationTimeoutMs: 10_000,
@@ -71,6 +83,9 @@ export function createAnalysisService(
     options.transactionSimulator ?? createDefaultTransactionSimulator(env);
   const reportExplainer = options.reportExplainer ?? createDefaultReportExplainer(env);
   const fallbackReportExplainer = options.fallbackReportExplainer ?? new SafeExplainer();
+  const reportStore =
+    options.reportStore ??
+    (env.reportStoreDir ? new FileReportStore(env.reportStoreDir) : undefined);
 
   return {
     async analyzeRequest(request: unknown): Promise<SecurityReport> {
@@ -104,14 +119,16 @@ export function createAnalysisService(
       );
 
       sessionStore.recordTransaction(normalizedRequest.transaction.from, report);
+      await persistReport(reportStore, report);
       return report;
     },
 
-    analyzeSignatureRequest(request: unknown): SignatureSecurityReport {
+    async analyzeSignatureRequest(request: unknown): Promise<SignatureSecurityReport> {
       const signatureRequest = request as SignatureAnalysisRequest;
       const report = analyzeSignature(signatureRequest);
 
       sessionStore.recordSignature(signatureRequest.intent.from, report);
+      await persistReport(reportStore, report);
       return report;
     },
 
@@ -123,8 +140,76 @@ export function createAnalysisService(
         reportExplainer,
         fallbackReportExplainer
       );
+    },
+
+    async getReport(reportHash: string): Promise<StoredReport | undefined> {
+      return reportStore?.get(reportHash);
+    },
+
+    verifyReportRequest(request: unknown): VerifyReportResponse {
+      return verifyReportHash(validateVerifyReportRequest(request));
     }
   };
+}
+
+function validateVerifyReportRequest(input: unknown): VerifyReportRequest {
+  const reportHashPattern = /^0x[a-f0-9]{64}$/;
+
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw new Error("Expected verify report request to be an object");
+  }
+
+  const request = input as Record<string, unknown>;
+
+  if (request.kind !== "transaction" && request.kind !== "signature") {
+    throw new Error("Expected kind to be transaction or signature");
+  }
+
+  if (!request.request || typeof request.request !== "object") {
+    throw new Error("Expected request to be an object");
+  }
+
+  if (!request.report || typeof request.report !== "object") {
+    throw new Error("Expected report to be an object");
+  }
+
+  const report = request.report as Record<string, unknown>;
+  if (
+    typeof report.reportHash !== "string" ||
+    !reportHashPattern.test(report.reportHash)
+  ) {
+    throw new Error("Expected report.reportHash to be a 0x-prefixed 32-byte hash");
+  }
+
+  return request as unknown as VerifyReportRequest;
+}
+
+class ReportPersistenceError extends Error {
+  readonly statusCode = 500;
+
+  constructor(error: unknown) {
+    super(
+      `Report persistence failed: ${
+        error instanceof Error ? error.message : "Unknown storage error"
+      }`
+    );
+    this.name = "ReportPersistenceError";
+  }
+}
+
+async function persistReport(
+  reportStore: ReportStore | undefined,
+  report: StoredReport
+): Promise<void> {
+  if (!reportStore) {
+    return;
+  }
+
+  try {
+    await reportStore.save(report);
+  } catch (error) {
+    throw new ReportPersistenceError(error);
+  }
 }
 
 export function createDefaultChainStateProvider(

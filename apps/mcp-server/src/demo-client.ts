@@ -14,6 +14,8 @@ import { analyzeTransactionToolName } from "./tools/analyze-transaction.tool.js"
 import { explainReportToolName } from "./tools/explain-report.tool.js";
 import { getPolicyProfileToolName } from "./tools/get-policy-profile.tool.js";
 import { listPolicyProfilesToolName } from "./tools/list-policy-profiles.tool.js";
+import { getReportToolName } from "./tools/get-report.tool.js";
+import { verifyReportToolName } from "./tools/verify-report.tool.js";
 
 const CHAIN_ID = 11155111;
 const FROM = "0x1111111111111111111111111111111111111111" as Address;
@@ -66,6 +68,14 @@ try {
 
   if (!toolNames.includes(getPolicyProfileToolName)) {
     throw new Error(`Missing MCP tool: ${getPolicyProfileToolName}`);
+  }
+
+  if (!toolNames.includes(verifyReportToolName)) {
+    throw new Error(`Missing MCP tool: ${verifyReportToolName}`);
+  }
+
+  if (!toolNames.includes(getReportToolName)) {
+    throw new Error(`Missing MCP tool: ${getReportToolName}`);
   }
 
   await verifyPolicyProfileTools();
@@ -135,11 +145,40 @@ async function runScenario(input: {
   console.log(`       explanationModel=${explanation.model}`);
   console.log(`       explanation=${explanation.explanation}`);
 
+  if (input.label === "safe-transfer") {
+    const verification = await callVerifyReport(input.request, report);
+    console.log(`       verified=${verification.valid}`);
+
+    if (!verification.valid) {
+      throw new Error("MCP verify_report did not validate safe-transfer report.");
+    }
+  }
+
   if (!passed) {
     throw new Error(
       `${input.label} expected ${input.expectedVerdict} but received ${report.verdict}`
     );
   }
+}
+
+async function callVerifyReport(
+  request: AnalysisRequest,
+  report: SecurityReport
+): Promise<{ valid: boolean; expectedHash: string; actualHash: string }> {
+  const result = await client.callTool({
+    name: verifyReportToolName,
+    arguments: {
+      kind: "transaction",
+      request,
+      report
+    } as unknown as Record<string, unknown>
+  });
+
+  return JSON.parse(extractTextContent(result, "MCP verify tool")) as {
+    valid: boolean;
+    expectedHash: string;
+    actualHash: string;
+  };
 }
 
 async function callExplainReport(report: SecurityReport): Promise<ExplainReportResponse> {

@@ -191,3 +191,13 @@ export const explainReportInputSchema = {
     })
     .passthrough()
 };
+
+export const verifyReportInputSchema = {
+  kind: z.enum(["transaction", "signature"]),
+  request: z.record(z.unknown()),
+  report: z.record(z.unknown())
+};
+
+export const getReportInputSchema = {
+  reportHash: z.string().regex(/^0x[a-f0-9]{64}$/)
+};

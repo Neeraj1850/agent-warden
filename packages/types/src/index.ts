@@ -5,6 +5,8 @@ export type {
   ExplainReportResponse,
   SecurityReport as AnalysisResult,
   SecurityReport,
+  VerifyReportRequest,
+  VerifyReportResponse,
   SimulationEngine,
   SimulationFailureCode,
   SimulationLog,

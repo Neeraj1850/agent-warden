@@ -1,6 +1,7 @@
 import {
   analyzeTransaction,
   analyzeTransactionWithSimulation,
+  verifyReportHash,
   type Address,
   type AnalysisRequest,
   type Hex,
@@ -10,6 +11,9 @@ import {
   type TransactionSimulator,
   type Verdict
 } from "../packages/core/src/index.ts";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 const CHAIN_ID = 11155111;
 const FROM = "0x1111111111111111111111111111111111111111" as Address;
@@ -81,9 +85,17 @@ const scenarios: Array<{
 console.log("[mvp-demo] AgentWarden deterministic MVP flow");
 
 let failures = 0;
+const reportStoreDir = await mkdtemp(join(tmpdir(), "agent-warden-mvp-"));
+const reports = new Map<string, SecurityReport>();
 
 for (const scenario of scenarios) {
   const report = await scenario.run();
+  reports.set(scenario.label, report);
+  await writeFile(
+    join(reportStoreDir, `${report.reportHash}.json`),
+    JSON.stringify(report, bigintJsonReplacer, 2),
+    "utf8"
+  );
   const passed = report.verdict === scenario.expectedVerdict;
   const status = passed ? "PASS" : "FAIL";
   const topViolations = report.policyViolations
@@ -103,10 +115,46 @@ for (const scenario of scenarios) {
   }
 }
 
+const allowReport = reports.get("payment-allowlisted-transfer");
+const blockReport = reports.get("payment-blocks-unlisted-recipient");
+const allowVerification = allowReport
+  ? verifyReportHash({
+      kind: "transaction",
+      request: {
+        ...transferRequest(RECIPIENT),
+        policyProfile: paymentProfile()
+      },
+      report: allowReport
+    })
+  : undefined;
+const blockVerification = blockReport
+  ? verifyReportHash({
+      kind: "transaction",
+      request: {
+        ...transferRequest(OTHER_RECIPIENT),
+        policyProfile: paymentProfile()
+      },
+      report: blockReport
+    })
+  : undefined;
+
+console.log(`[mvp-demo] reportStore=${reportStoreDir}`);
+console.log(
+  `[mvp-demo] verify allow=${allowVerification?.valid ?? false} block=${blockVerification?.valid ?? false}`
+);
+
+if (!allowVerification?.valid || !blockVerification?.valid) {
+  failures += 1;
+}
+
 console.log(`[mvp-demo] complete total=${scenarios.length} failures=${failures}`);
 
 if (failures > 0) {
   process.exitCode = 1;
+}
+
+function bigintJsonReplacer(_key: string, value: unknown): unknown {
+  return typeof value === "bigint" ? value.toString() : value;
 }
 
 function fixedSimulator(result: SimulationResult): TransactionSimulator {

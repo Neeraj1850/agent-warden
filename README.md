@@ -48,6 +48,8 @@ flowchart LR
   Outcome --> Report
   Report --> Decision["ALLOW / WARN / BLOCK"]
   Report --> Hash["Deterministic Report Hash"]
+  Hash --> Audit["Optional Local Report Store"]
+  Audit --> Verify["Report Verification"]
   Hash -. future .-> Arc["Arc Attestation"]
   Transport -. future .-> X402["x402 Payment Gate"]
 ```
@@ -74,7 +76,8 @@ x402 remains parked and disabled by default while the analyzer core matures.
 3. AgentWarden decodes calldata and validates the request.
 4. The policy engine checks chain, sender, token, recipient or spender, amount, unknown selectors, and unlimited approvals.
 5. The analyzer returns a deterministic verdict and report hash.
-6. Future versions will require x402 payment before analysis and anchor report hashes on Arc Testnet.
+6. If `REPORT_STORE_DIR` is configured, the completed report is persisted as `<reportHash>.json`.
+7. The report can be retrieved and verified deterministically before any future anchoring flow.
 
 ## Local Development
 
@@ -105,6 +108,7 @@ It runs deterministic offline scenarios for:
 - blocked treasury approval
 - allowed trading router swap with mocked simulation
 - blocked unknown trading router
+- local report persistence and verification for one allowed and one blocked report
 
 Expected output shape:
 
@@ -114,6 +118,8 @@ Expected output shape:
        violations=none
        recommendedAction=...
        hash=0x...
+[mvp-demo] reportStore=C:\Users\...\agent-warden-mvp-...
+[mvp-demo] verify allow=true block=true
 [mvp-demo] complete total=5 failures=0
 ```
 
@@ -124,6 +130,7 @@ Release notes are tracked with Changesets metadata in [`.changeset`](.changeset)
 Optional enrichments are disabled by default:
 
 - `GROQ_API_KEY` + `GROQ_MODEL` enable the LangChain/Groq report explainer.
+- `REPORT_STORE_DIR` enables local JSON report persistence and `GET /reports/:hash`.
 - `TENDERLY_RPC_URL` enables Tenderly simulation instead of raw `eth_call`.
 - `GOPLUS_ENABLED=true` enables GoPlus address checks for MCP `check_address`.
 - `ANALYSIS_RPC_URL` can be used by whatsabi helpers for dynamic ABI recovery.
@@ -195,7 +202,11 @@ Run the local MCP client demo:
 pnpm --filter @agent-warden/mcp-server demo
 ```
 
-The demo client spawns the stdio server, lists tools, sends a safe ERC-20 transfer and a malicious unlimited approval, and prints the returned summary, recommended action, verdict, risk score, and report hash.
+The demo client spawns the stdio server, lists tools, sends a safe ERC-20
+transfer and a malicious unlimited approval, verifies the safe report through
+`verify_report`, and prints the returned summary, recommended action, verdict,
+risk score, and report hash. The MCP server also exposes `get_report` when
+`REPORT_STORE_DIR` is configured.
 
 ## x402 Integration Plan
 

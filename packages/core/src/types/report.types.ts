@@ -1,6 +1,10 @@
 import type { TransactionIntent } from "./intent.types.js";
 import type { PolicyProfile } from "./policy-profile.types.js";
 import type { PolicyViolation, Verdict } from "./policy.types.js";
+import type {
+  SignatureAnalysisRequest,
+  SignatureSecurityReport
+} from "./signature.types.js";
 import type { ChainStateSnapshot } from "./state.types.js";
 import type {
   ActionType,
@@ -128,4 +132,22 @@ export interface ExplainReportResponse {
   model: string;
   explanation: string;
   safetyNotice: string;
+}
+
+export type VerifyReportRequest =
+  | {
+      kind: "transaction";
+      request: AnalysisRequest;
+      report: SecurityReport;
+    }
+  | {
+      kind: "signature";
+      request: SignatureAnalysisRequest;
+      report: SignatureSecurityReport;
+    };
+
+export interface VerifyReportResponse {
+  valid: boolean;
+  expectedHash: string;
+  actualHash: string;
 }

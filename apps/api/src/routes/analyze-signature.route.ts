@@ -11,9 +11,9 @@ export function createAnalyzeSignatureRouter(
 ): Router {
   const router = Router();
 
-  router.post("/analyze-signature", (request, response, next) => {
+  router.post("/analyze-signature", async (request, response, next) => {
     try {
-      const report = analysisService.analyzeSignatureRequest(request.body);
+      const report = await analysisService.analyzeSignatureRequest(request.body);
       logReport(responseLocals(request).requestId, report);
 
       response.status(200).type("application/json").send(jsonStringify(report));

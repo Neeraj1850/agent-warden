@@ -24,5 +24,7 @@ describe("MCP server tool discovery", () => {
 
     assert.ok(toolNames.includes("list_policy_profiles"));
     assert.ok(toolNames.includes("get_policy_profile"));
+    assert.ok(toolNames.includes("verify_report"));
+    assert.ok(toolNames.includes("get_report"));
   });
 });

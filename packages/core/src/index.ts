@@ -5,6 +5,7 @@ export * from "./types/report.types.js";
 export * from "./types/signature.types.js";
 export * from "./types/state.types.js";
 export * from "./types/transaction.types.js";
+export * from "./audit/report-verifier.js";
 export * from "./analyzer/analyze-transaction.js";
 export * from "./analyzer/analyze-signature.js";
 export * from "./analyzer/calldata-decoder.js";

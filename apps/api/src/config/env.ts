@@ -13,6 +13,7 @@ export interface ApiEnv {
   simulationTimeoutMs: number;
   groqApiKey?: string;
   groqModel: string;
+  reportStoreDir?: string;
 }
 
 export function getEnv(): ApiEnv {
@@ -33,7 +34,8 @@ export function getEnv(): ApiEnv {
     anvilRpcUrl: optionalEnv(process.env.ANVIL_RPC_URL),
     simulationTimeoutMs: Number(process.env.SIMULATION_TIMEOUT_MS ?? 10_000),
     groqApiKey: optionalEnv(process.env.GROQ_API_KEY),
-    groqModel: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant"
+    groqModel: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
+    reportStoreDir: optionalEnv(process.env.REPORT_STORE_DIR)
   };
 }
 

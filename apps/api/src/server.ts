@@ -5,6 +5,8 @@ import { createAnalyzeSignatureRouter } from "./routes/analyze-signature.route.j
 import { createAnalyzeRouter } from "./routes/analyze.route.js";
 import { createExplainReportRouter } from "./routes/explain-report.route.js";
 import { createHealthRouter } from "./routes/health.route.js";
+import { createReportsRouter } from "./routes/reports.route.js";
+import { createVerifyReportRouter } from "./routes/verify-report.route.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { installX402Middleware } from "./middleware/x402.middleware.js";
 import {
@@ -28,6 +30,8 @@ export async function createApiServer(
   app.use(createAnalyzeRouter(analysisService));
   app.use(createAnalyzeSignatureRouter(analysisService));
   app.use(createExplainReportRouter(analysisService));
+  app.use(createReportsRouter(analysisService));
+  app.use(createVerifyReportRouter(analysisService));
   app.use(errorMiddleware);
 
   return app;
