@@ -47,15 +47,9 @@ importers:
       '@agent-warden/types':
         specifier: workspace:*
         version: link:../../packages/types
-      '@x402/core':
-        specifier: ^2.14.0
-        version: 2.14.0
-      '@x402/evm':
-        specifier: ^2.14.0
-        version: 2.14.0(typescript@5.9.3)
-      '@x402/express':
-        specifier: ^2.14.0
-        version: 2.14.0(ethers@6.16.0)(express@5.2.1)(typescript@5.9.3)
+      '@agent-warden/x402':
+        specifier: workspace:*
+        version: link:../../packages/x402
       express:
         specifier: ^5.1.0
         version: 5.2.1
@@ -81,6 +75,9 @@ importers:
       '@agent-warden/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@agent-warden/x402':
+        specifier: workspace:*
+        version: link:../../packages/x402
       '@modelcontextprotocol/sdk':
         specifier: ^1.17.5
         version: 1.29.0(@cfworker/json-schema@4.1.1)(zod@3.25.76)
@@ -117,6 +114,10 @@ importers:
         version: 5.9.3
 
   examples/mock-agent:
+    dependencies:
+      '@agent-warden/x402':
+        specifier: workspace:*
+        version: link:../../packages/x402
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -197,6 +198,25 @@ importers:
         version: 5.9.3
 
   packages/x402:
+    dependencies:
+      '@circle-fin/x402-batching':
+        specifier: 3.0.4
+        version: 3.0.4(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@5.9.3))(viem@2.52.0(typescript@5.9.3)(zod@3.25.76))
+      '@x402/core':
+        specifier: 2.14.0
+        version: 2.14.0
+      '@x402/evm':
+        specifier: 2.14.0
+        version: 2.14.0(typescript@5.9.3)
+      '@x402/express':
+        specifier: 2.14.0
+        version: 2.14.0(ethers@6.16.0)(express@5.2.1)(typescript@5.9.3)
+      '@x402/fetch':
+        specifier: 2.14.0
+        version: 2.14.0
+      viem:
+        specifier: 2.52.0
+        version: 2.52.0(typescript@5.9.3)(zod@3.25.76)
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -218,6 +238,17 @@ packages:
 
   '@cfworker/json-schema@4.1.1':
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
+
+  '@circle-fin/x402-batching@3.0.4':
+    resolution: {integrity: sha512-631ZdmNQiCdNRLCY3uNTiD8G+cK4wiIElk/iQESwcpziQfirBXPCR9At14Kqgeq6tyFF67wHrIZzSRhPWk7C6Q==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@x402/core': ^2.3.0
+      '@x402/evm': ^2.3.0
+      viem: ^2.0.0
+    peerDependenciesMeta:
+      '@x402/evm':
+        optional: true
 
   '@esbuild/aix-ppc64@0.28.0':
     resolution: {integrity: sha512-lhRUCeuOyJQURhTxl4WkpFTjIsbDayJHih5kZC1giwE+MhIzAb7mEsQMqMf18rHLsrb5qI1tafG20mLxEWcWlA==}
@@ -662,6 +693,9 @@ packages:
 
   '@x402/extensions@2.14.0':
     resolution: {integrity: sha512-2zu8hxf0j4BRvSWNPRKziQLdubnQpzzmU9xopKK5ZyXa434hvmGEUPMBOA2NIYvaTkyZjQH3JZ3GPDyzjBvFqA==}
+
+  '@x402/fetch@2.14.0':
+    resolution: {integrity: sha512-GSCnxdrbmtuKeki2MTy2vnJq4e6PrA7XfF1yX23VxKvASIYaXUioW1HtRzNYU7imeMe13YcwefRH1jO7Ei7Tyg==}
 
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
@@ -1527,6 +1561,13 @@ snapshots:
 
   '@cfworker/json-schema@4.1.1': {}
 
+  '@circle-fin/x402-batching@3.0.4(@x402/core@2.14.0)(@x402/evm@2.14.0(typescript@5.9.3))(viem@2.52.0(typescript@5.9.3)(zod@3.25.76))':
+    dependencies:
+      '@x402/core': 2.14.0
+      viem: 2.52.0(typescript@5.9.3)(zod@3.25.76)
+    optionalDependencies:
+      '@x402/evm': 2.14.0(typescript@5.9.3)
+
   '@esbuild/aix-ppc64@0.28.0':
     optional: true
 
@@ -1958,6 +1999,10 @@ snapshots:
       - ethers
       - typescript
       - utf-8-validate
+
+  '@x402/fetch@2.14.0':
+    dependencies:
+      '@x402/core': 2.14.0
 
   abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
     optionalDependencies:

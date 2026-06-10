@@ -139,10 +139,10 @@ Optional enrichments are disabled by default:
 
 The mock agent simulates an AI agent with a wallet address preparing an unsigned Ethereum Sepolia transaction.
 
-Start AgentWarden with mock x402 enabled:
+Start AgentWarden with deterministic mock x402 enabled:
 
 ```bash
-X402_ENABLED=true X402_MODE=mock pnpm --filter @agent-warden/api dev
+X402_ENABLED=true X402_PROVIDER=mock X402_PAY_TO=0xYourReceivingWallet pnpm --filter @agent-warden/api dev
 ```
 
 Run a safe transfer request:
@@ -157,7 +157,7 @@ Run a malicious unlimited approval request:
 pnpm --filter @agent-warden/mock-agent malicious
 ```
 
-This uses Ethereum Sepolia for the transaction being analyzed and a local mock x402 payment header for the API gate. Real public x402 testnet payments should use Base Sepolia `eip155:84532`.
+This uses Ethereum Sepolia for the transaction being analyzed and a local mock payment retry. The same challenge and canonical request hash are used for preflight and delivery.
 
 ## Attack Payload Suite
 
@@ -188,7 +188,7 @@ Use `--no-artifacts` if you only want console output.
 
 ## MCP Tool
 
-The MCP server package exposes an `analyze_transaction` tool wrapper around the core analyzer over the official MCP TypeScript SDK stdio transport.
+The MCP server exposes transaction and signature analysis over the official MCP TypeScript SDK stdio transport. `MCP_ANALYSIS_MODE=local` calls the deterministic analyzer directly. `MCP_ANALYSIS_MODE=paid-api` uses the Arc Gateway-protected HTTP API and never silently falls back.
 
 Run the server:
 
@@ -208,38 +208,47 @@ transfer and a malicious unlimited approval, verifies the safe report through
 risk score, and report hash. The MCP server also exposes `get_report` when
 `REPORT_STORE_DIR` is configured.
 
-## x402 Integration Plan
+## Arc Gateway x402
 
-The API now supports an x402-protected `/analyze` path through Express middleware.
+The API protects `POST /analyze` and `POST /analyze-signature`. Arc Testnet Circle Gateway Nanopayments is the primary testnet provider; the standard x402 EVM provider remains available for interoperability.
 
 Local mock mode:
 
 ```bash
-X402_ENABLED=true X402_MODE=mock pnpm --filter @agent-warden/api dev
+X402_ENABLED=true X402_PROVIDER=mock X402_PAY_TO=0xYourReceivingWallet pnpm --filter @agent-warden/api dev
 ```
 
-Real Base Sepolia mode:
+Arc Gateway seller:
 
 ```bash
 X402_ENABLED=true \
-X402_MODE=real \
+X402_PROVIDER=arc-gateway \
 X402_PAY_TO=0xYourReceivingWallet \
 X402_PRICE=$0.001 \
-X402_NETWORK=eip155:84532 \
+X402_ACCEPTED_NETWORKS=eip155:5042002 \
+X402_GATEWAY_FACILITATOR_URL=https://gateway-api-testnet.circle.com \
 pnpm --filter @agent-warden/api dev
 ```
 
-The production x402 path should:
+Paid MCP bridge:
 
-- protect analysis requests with x402
-- require a max payment cap
-- bind payment metadata to the analysis request hash
-- reject replayed or mismatched payments
-- keep paid endpoint responses untrusted
+```bash
+MCP_ANALYSIS_MODE=paid-api \
+AGENTWARDEN_API_URL=http://localhost:8787 \
+X402_PAYER_PRIVATE_KEY=0xTestnetOnlyKey \
+X402_PAYER_CHAIN=arcTestnet \
+X402_PAY_TO=0xYourReceivingWallet \
+X402_MAX_PRICE=$0.01 \
+pnpm --filter @agent-warden/mcp-server dev
+```
+
+Before signing, MCP performs an unpaid preflight and validates the price, Arc network, USDC asset, seller, exact scheme, and Gateway verifying contract from Circle `CHAIN_CONFIGS`. Payment is bound to a random challenge plus the canonical route/body hash. Replays, substitutions, expiry, and concurrent challenge reuse are rejected.
+
+`X402_PROVIDER=standard` retains the standard facilitator-based x402 seller path. The legacy `X402_MODE=mock|real` setting maps to `mock|standard` only when `X402_PROVIDER` is absent.
 
 ## Arc Integration Plan
 
-The `packages/arc` package and `contracts` folder contain placeholders for:
+Arc Gateway payments are integrated now. The `packages/arc` package and `contracts` folder remain separate boundaries for:
 
 - Arc Testnet client setup
 - report hash anchoring
@@ -247,4 +256,4 @@ The `packages/arc` package and `contracts` folder contain placeholders for:
 - ERC-8183 security-review jobs
 - policy registry governance
 
-Arc is the target settlement and attestation environment for future report anchoring and agent-to-agent security-review workflows.
+ERC-8004 identity, ERC-8183 escrowed review jobs, Circle managed wallets, account abstraction, and report anchoring are deliberately outside this payment milestone. They do not strengthen request-payment binding, and Gateway V1 requires an EOA signer rather than EIP-1271 contract signatures.

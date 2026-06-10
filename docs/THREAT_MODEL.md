@@ -17,7 +17,9 @@
 - deterministic policy checks
 - report hashing
 - no LLM authority
-- no paid or trusted external API assumptions
+- x402 route/body hash binding with expiring single-use challenges
+- payment requirement validation before signing
+- no trust in payment metadata or facilitator responses
 
 ## Future Mitigations
 
@@ -26,5 +28,4 @@
 - MEV and slippage analysis
 - compliance screening
 - MCP server allowlists
-- x402 replay protection
 - Arc attestation and reputation

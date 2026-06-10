@@ -14,7 +14,9 @@
 
 ## Phase 2: End-to-End Demo
 
-- x402 payment gate on testnet
+- Circle Gateway x402 payment gate on Arc Testnet
+- MCP local and paid API analysis modes
+- canonical request-payment binding and replay protection
 - Arc Testnet report registry deployment
 - demo transaction scenarios
 - attack payload suite for analyzer evidence

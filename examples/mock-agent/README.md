@@ -8,14 +8,14 @@ It uses:
 - payment mode: mock x402 header
 - endpoint: `POST /analyze`
 
-The mock payment is intentionally local-only. Real x402 testnet payment should use Base Sepolia `eip155:84532` with the public testnet facilitator.
+The mock payment is intentionally local-only. The primary live payment demo uses Circle Gateway Nanopayments on Arc Testnet `eip155:5042002`.
 
 ## Run
 
 Start the API in mock payment mode:
 
 ```bash
-X402_ENABLED=true X402_MODE=mock pnpm --filter @agent-warden/api dev
+X402_ENABLED=true X402_PROVIDER=mock X402_PAY_TO=0xYourReceivingWallet pnpm --filter @agent-warden/api dev
 ```
 
 In another terminal, run the safe transfer:

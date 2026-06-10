@@ -44,7 +44,7 @@ export function analyzeSignature(
   };
 }
 
-function validateSignatureRequest(
+export function validateSignatureRequest(
   request: SignatureAnalysisRequest
 ): SignatureAnalysisRequest {
   if (!request || typeof request !== "object") {

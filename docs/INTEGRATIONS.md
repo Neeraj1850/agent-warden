@@ -1,10 +1,11 @@
 # Integrations
 
-## Current Placeholders
+## Current Integrations
 
-- MCP tool wrapper
-- x402 payment verifier
-- Arc Testnet client
+- MCP local and paid API analysis modes
+- Circle Gateway Nanopayments on Arc Testnet
+- standard x402 EVM seller compatibility mode
+- canonical request-payment binding and replay protection
 - report registry client
 - ERC-8004 identity placeholder
 - ERC-8183 job placeholder
@@ -20,4 +21,4 @@
 - viem for ABI and calldata decoding
 - Alchemy SDK for optional enriched intelligence later
 - official MCP SDK for transport
-- x402 SDK for payment verification
+- Circle Gateway and x402 SDKs for payment verification

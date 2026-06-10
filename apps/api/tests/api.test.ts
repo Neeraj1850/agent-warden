@@ -25,6 +25,7 @@ import {
 } from "../src/services/analysis.service.js";
 import type { ReportStore, StoredReport } from "../src/services/report-store.service.js";
 import type { ApiEnv } from "../src/config/env.js";
+import { hashBoundRequest } from "@agent-warden/x402";
 
 const FROM = "0x1111111111111111111111111111111111111111";
 const TOKEN = "0x2222222222222222222222222222222222222222";
@@ -831,11 +832,13 @@ function testEnv(): ApiEnv {
   return {
     port: 0,
     x402Enabled: false,
-    x402Mode: "mock",
+    x402Provider: "mock",
     x402PayTo: "",
-    x402Network: "eip155:84532",
+    x402AcceptedNetworks: ["eip155:5042002"],
     x402Price: "$0.001",
-    x402FacilitatorUrl: "https://x402.org/facilitator",
+    x402GatewayFacilitatorUrl: "https://gateway-api-testnet.circle.com",
+    x402StandardFacilitatorUrl: "https://x402.org/facilitator",
+    x402ChallengeTtlMs: 5 * 60_000,
     analysisRpcTimeoutMs: 3_000,
     simulationTimeoutMs: 10_000,
     groqModel: "llama-3.1-8b-instant"
@@ -1108,4 +1111,241 @@ function sampleSecurityReport(): SecurityReport {
     },
     reportHash: "0x1111111111111111111111111111111111111111111111111111111111111111"
   };
+}
+
+describe("AgentWarden x402 request binding", () => {
+  let server: Server;
+  let baseUrl: string;
+
+  before(async () => {
+    const app = await createApiServer({
+      ...testEnv(),
+      x402Enabled: true,
+      x402Provider: "mock",
+      x402PayTo: "0x9999999999999999999999999999999999999999"
+    });
+    server = app.listen(0);
+    await onceListening(server);
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+    baseUrl = `http://127.0.0.1:${address.port}`;
+  });
+
+  after(async () => {
+    await closeServer(server);
+  });
+
+  it("keeps non-analysis routes free", async () => {
+    const response = await fetch(`${baseUrl}/health`);
+    assert.equal(response.status, 200);
+  });
+
+  it("requires payment for transaction and signature analysis", async () => {
+    const transactionBody = x402SafeTransfer();
+    const transaction = await boundPost(
+      `${baseUrl}/analyze`,
+      "/analyze",
+      transactionBody,
+      "transaction-preflight"
+    );
+    assert.equal(transaction.status, 402);
+    assert.ok(transaction.headers.get("payment-required"));
+
+    const signatureBody = {
+      requestId: "signature-preflight",
+      intent: {
+        action: "login",
+        chainId: 5042002,
+        from: FROM
+      },
+      payload: {
+        kind: "personal_sign",
+        message: "Sign in to AgentWarden"
+      }
+    };
+    const signature = await boundPost(
+      `${baseUrl}/analyze-signature`,
+      "/analyze-signature",
+      signatureBody,
+      "signature-preflight"
+    );
+    assert.equal(signature.status, 402);
+  });
+
+  it("accepts a paid retry and rejects replay", async () => {
+    const body = x402SafeTransfer();
+    const challenge = "paid-retry";
+    const preflight = await boundPost(`${baseUrl}/analyze`, "/analyze", body, challenge);
+    assert.equal(preflight.status, 402);
+
+    const paid = await boundPost(`${baseUrl}/analyze`, "/analyze", body, challenge, {
+      "x-agentwarden-mock-payment": "paid"
+    });
+    assert.equal(paid.status, 200);
+    assert.equal((await paid.json()).verdict, "ALLOW");
+
+    const replay = await boundPost(`${baseUrl}/analyze`, "/analyze", body, challenge, {
+      "x-agentwarden-mock-payment": "paid"
+    });
+    assert.equal(replay.status, 400);
+    assert.equal((await replay.json()).reason, "consumed");
+  });
+
+  it("rejects body and route substitution", async () => {
+    const body = x402SafeTransfer();
+    const challenge = "substitution";
+    const requestHash = hashBoundRequest("/analyze", body);
+    const substituted = await fetch(`${baseUrl}/analyze`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-agentwarden-challenge": challenge,
+        "x-agentwarden-request-hash": requestHash
+      },
+      body: JSON.stringify({
+        ...body,
+        transaction: {
+          ...body.transaction,
+          value: "1"
+        }
+      })
+    });
+    assert.equal(substituted.status, 400);
+
+    const routeSubstitution = await fetch(`${baseUrl}/analyze-signature`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-agentwarden-challenge": challenge,
+        "x-agentwarden-request-hash": requestHash
+      },
+      body: JSON.stringify(body)
+    });
+    assert.equal(routeSubstitution.status, 400);
+  });
+
+  it("releases the challenge when settlement fails", async () => {
+    const app = await createApiServer(
+      {
+        ...testEnv(),
+        x402Enabled: true,
+        x402Provider: "mock",
+        x402PayTo: "0x9999999999999999999999999999999999999999"
+      },
+      {},
+      {
+        providerMiddleware: (request, response, next) => {
+          const payment = request.headers["x-agentwarden-mock-payment"];
+          if (!payment) {
+            response.status(402).json({ error: "payment required" });
+            return;
+          }
+          if (payment === "fail") {
+            response.status(503).json({ error: "settlement unavailable" });
+            return;
+          }
+          next();
+        }
+      }
+    );
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const url = `http://127.0.0.1:${address.port}/analyze`;
+      const body = x402SafeTransfer();
+      const challenge = "settlement-retry";
+      await boundPost(url, "/analyze", body, challenge);
+      const failed = await boundPost(url, "/analyze", body, challenge, {
+        "x-agentwarden-mock-payment": "fail"
+      });
+      assert.equal(failed.status, 503);
+
+      const retried = await boundPost(url, "/analyze", body, challenge, {
+        "x-agentwarden-mock-payment": "paid"
+      });
+      assert.equal(retried.status, 200);
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+
+  it("returns service failure after successful payment when report storage fails", async () => {
+    const app = await createApiServer(
+      {
+        ...testEnv(),
+        x402Enabled: true,
+        x402Provider: "mock",
+        x402PayTo: "0x9999999999999999999999999999999999999999"
+      },
+      {
+        reportStore: new FailingReportStore()
+      }
+    );
+    const isolatedServer = app.listen(0);
+    await onceListening(isolatedServer);
+    const address = isolatedServer.address();
+    if (!address || typeof address === "string") {
+      throw new Error("Expected HTTP server address");
+    }
+
+    try {
+      const url = `http://127.0.0.1:${address.port}/analyze`;
+      const body = x402SafeTransfer();
+      const challenge = "storage-failure";
+      await boundPost(url, "/analyze", body, challenge);
+      const response = await boundPost(url, "/analyze", body, challenge, {
+        "x-agentwarden-mock-payment": "paid"
+      });
+      assert.equal(response.status, 500);
+    } finally {
+      await closeServer(isolatedServer);
+    }
+  });
+});
+
+function x402SafeTransfer() {
+  return {
+    requestId: "x402-safe-transfer",
+    intent: {
+      action: "token_transfer",
+      chainId: 5042002,
+      from: FROM,
+      tokenAddress: TOKEN,
+      recipient: RECIPIENT,
+      amount: "1"
+    },
+    transaction: {
+      chainId: 5042002,
+      from: FROM,
+      to: TOKEN,
+      value: "0",
+      data: encodeErc20Transfer(RECIPIENT, 1n)
+    }
+  };
+}
+
+function boundPost(
+  url: string,
+  route: string,
+  body: unknown,
+  challenge: string,
+  extraHeaders: Record<string, string> = {}
+): Promise<Response> {
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-agentwarden-challenge": challenge,
+      "x-agentwarden-request-hash": hashBoundRequest(route, body),
+      ...extraHeaders
+    },
+    body: JSON.stringify(body)
+  });
 }

@@ -13,9 +13,7 @@
   "dependencies": {
     "@agent-warden/core": "workspace:*",
     "@agent-warden/types": "workspace:*",
-    "@x402/core": "^2.14.0",
-    "@x402/evm": "^2.14.0",
-    "@x402/express": "^2.14.0",
+    "@agent-warden/x402": "workspace:*",
     "express": "^5.1.0"
   },
   "devDependencies": {

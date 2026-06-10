@@ -3,6 +3,10 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import type { AnalysisRequest } from "@agent-warden/types";
 import type { SignatureAnalysisRequest } from "@agent-warden/types";
 import {
+  createAnalysisClientFromEnv,
+  type AnalysisClient
+} from "./clients/analysis-client.js";
+import {
   analyzeSignatureToolDescription,
   analyzeSignatureToolInputSchema,
   analyzeSignatureToolName,
@@ -63,7 +67,12 @@ import {
   verifyReportToolName
 } from "./tools/verify-report.tool.js";
 
-export function createMcpServer(): McpServer {
+export interface McpServerOptions {
+  analysisClient?: AnalysisClient;
+}
+
+export function createMcpServer(options: McpServerOptions = {}): McpServer {
+  const analysisClient = options.analysisClient ?? createAnalysisClientFromEnv();
   const server = new McpServer({
     name: "agent-warden",
     version: "0.1.0"
@@ -73,7 +82,8 @@ export function createMcpServer(): McpServer {
     analyzeTransactionToolName,
     analyzeTransactionToolDescription,
     analyzeTransactionToolInputSchema,
-    async (input) => executeAnalyzeTransactionTool(input as AnalysisRequest)
+    async (input) =>
+      executeAnalyzeTransactionTool(input as AnalysisRequest, analysisClient)
   );
   server.tool(
     decodeCalldataToolName,
@@ -86,7 +96,8 @@ export function createMcpServer(): McpServer {
     analyzeSignatureToolName,
     analyzeSignatureToolDescription,
     analyzeSignatureToolInputSchema,
-    async (input) => executeAnalyzeSignatureTool(input as SignatureAnalysisRequest)
+    async (input) =>
+      executeAnalyzeSignatureTool(input as SignatureAnalysisRequest, analysisClient)
   );
   server.tool(
     getPolicyToolName,
@@ -151,6 +162,7 @@ if (process.argv.includes("--describe")) {
       {
         name: "agent-warden",
         transport: "stdio",
+        analysisMode: process.env.MCP_ANALYSIS_MODE ?? "local",
         tools: [
           {
             name: analyzeTransactionToolName,

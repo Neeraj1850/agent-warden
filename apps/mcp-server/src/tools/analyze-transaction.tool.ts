@@ -1,5 +1,5 @@
-import { analyzeTransactionWithSimulation } from "@agent-warden/core";
 import type { AnalysisRequest } from "@agent-warden/types";
+import { LocalAnalysisClient, type AnalysisClient } from "../clients/analysis-client.js";
 import { analyzeTransactionInputSchema } from "../schemas/mcp.schemas.js";
 
 export const analyzeTransactionToolName = "analyze_transaction";
@@ -9,8 +9,11 @@ export const analyzeTransactionToolDescription =
 
 export const analyzeTransactionToolInputSchema = analyzeTransactionInputSchema;
 
-export async function executeAnalyzeTransactionTool(input: AnalysisRequest) {
-  const report = await analyzeTransactionWithSimulation(input);
+export async function executeAnalyzeTransactionTool(
+  input: AnalysisRequest,
+  client: AnalysisClient = new LocalAnalysisClient()
+) {
+  const { report, payment } = await client.analyzeTransaction(input);
   console.error(
     `[mcp] analyze_transaction verdict=${report.verdict} risk=${report.riskScore} hash=${report.reportHash}`
   );
@@ -22,7 +25,8 @@ export async function executeAnalyzeTransactionTool(input: AnalysisRequest) {
         text: JSON.stringify(report, bigintJsonReplacer, 2)
       }
     ],
-    isError: report.verdict === "BLOCK"
+    isError: report.verdict === "BLOCK",
+    ...(payment ? { _meta: { payment } } : {})
   };
 }
 

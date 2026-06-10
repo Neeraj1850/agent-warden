@@ -9,6 +9,7 @@ import { createReportsRouter } from "./routes/reports.route.js";
 import { createVerifyReportRouter } from "./routes/verify-report.route.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { installX402Middleware } from "./middleware/x402.middleware.js";
+import type { X402MiddlewareOptions } from "./middleware/x402.middleware.js";
 import {
   createAnalysisService,
   type AnalysisServiceOptions
@@ -16,7 +17,8 @@ import {
 
 export async function createApiServer(
   env: ApiEnv,
-  analysisOptions: AnalysisServiceOptions = {}
+  analysisOptions: AnalysisServiceOptions = {},
+  x402Options: X402MiddlewareOptions = {}
 ): Promise<express.Express> {
   const app = express();
   const analysisService = createAnalysisService(env, analysisOptions);
@@ -25,7 +27,7 @@ export async function createApiServer(
   app.use(express.json({ limit: "256kb" }));
   app.use(noStoreMiddleware);
   app.use(requestLogMiddleware);
-  await installX402Middleware(app, env);
+  await installX402Middleware(app, env, x402Options);
   app.use(createHealthRouter());
   app.use(createAnalyzeRouter(analysisService));
   app.use(createAnalyzeSignatureRouter(analysisService));

@@ -139,18 +139,39 @@ async function sendAnalysisRequest(
   apiUrl: string,
   request: AnalysisRequest
 ): Promise<SecurityReport> {
-  console.log("[mock-agent] sending request with mock x402 payment header");
+  const route = new URL(apiUrl).pathname;
+  const challenge = randomUUID();
+  const bindingHeaders = {
+    "content-type": "application/json",
+    "x-request-id": request.requestId,
+    [AGENTWARDEN_CHALLENGE_HEADER]: challenge,
+    [AGENTWARDEN_REQUEST_HASH_HEADER]: hashBoundRequest(route, request)
+  };
+  console.log("[mock-agent] sending unpaid x402 preflight");
+  const preflight = await fetch(apiUrl, {
+    method: "POST",
+    headers: bindingHeaders,
+    body: JSON.stringify(request)
+  });
 
+  if (preflight.ok) {
+    console.log(`[mock-agent] response status=${preflight.status}`);
+    return (await preflight.json()) as SecurityReport;
+  }
+
+  if (preflight.status !== 402) {
+    throw new Error(`AgentWarden preflight failed: ${await preflight.text()}`);
+  }
+
+  console.log("[mock-agent] retrying with mock x402 payment");
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
-      "content-type": "application/json",
-      "x-request-id": request.requestId,
+      ...bindingHeaders,
       "x-agentwarden-mock-payment": "paid"
     },
     body: JSON.stringify(request)
   });
-
   const responseText = await response.text();
   console.log(`[mock-agent] response status=${response.status}`);
 
@@ -208,3 +229,9 @@ function encodeAddress(address: Address): string {
 function encodeUint256(value: bigint): string {
   return value.toString(16).padStart(64, "0");
 }
+import { randomUUID } from "node:crypto";
+import {
+  AGENTWARDEN_CHALLENGE_HEADER,
+  AGENTWARDEN_REQUEST_HASH_HEADER,
+  hashBoundRequest
+} from "@agent-warden/x402";

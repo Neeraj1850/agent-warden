@@ -10,7 +10,7 @@ Provide a security checkpoint that spend-capable AI agents call before signing o
 - unsigned EVM transaction
 - signature request payload for typed/off-chain signing analysis
 - optional request ID
-- future x402 payment proof
+- optional x402 challenge, canonical request hash, and verified settlement metadata
 
 ## Outputs
 

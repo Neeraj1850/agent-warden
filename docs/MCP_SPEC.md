@@ -72,16 +72,13 @@ The client:
 - `verify_report`: recomputes a report hash from the original request context.
 - `get_report`: reads a persisted report from `REPORT_STORE_DIR`.
 
-## x402 Split
+## x402 Paid Bridge
 
-MCP is not itself an HTTP payment transport. The current clean split is:
+MCP supports two explicit analysis modes:
 
-- MCP server exposes `analyze_transaction` to agents.
-- HTTP API exposes `POST /analyze` as the x402-protected resource.
-- A future bridge mode can make the MCP tool call the paid HTTP API instead of the local analyzer.
+- `local`: transaction and signature tools call the deterministic analyzer directly.
+- `paid-api`: tools call the protected HTTP API through Circle Gateway Nanopayments.
 
-## Future Work
+Paid mode performs an unpaid preflight, validates the complete payment requirement against configured limits and Circle chain configuration, and only then signs. It never silently falls back to core. Successful tool results include bounded payment metadata in MCP `_meta`; private keys, signatures, and raw authorizations are never returned.
 
-- add server authentication
-- add x402 payment requirement discovery
-- add request hash binding between MCP payload and payment proof
+The deterministic report JSON is unchanged between local and paid modes.
